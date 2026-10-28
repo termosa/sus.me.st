@@ -8,14 +8,9 @@ own opening, so they loop without a dip.
 | File | Source | Author | Changes beyond the above |
 |---|---|---|---|
 | jazz.mp3 | [Drunken Saloon](https://opengameart.org/node/139016) | iamoneabe | — |
-| funk.mp3 | "Sleep" from [Funk (Collection)](https://opengameart.org/content/funk-collection) | Holizna | Loop crossfade |
-| lofi.mp3 | "New Shoes" from [Happy Lo-Fi (Lofi Collection)](https://opengameart.org/content/happy-lo-fi-lofi-collection) | Holizna | Loop crossfade |
 | synthwave.mp3 | [Space City](https://opengameart.org/content/space-city) | MintoDog | — |
 | drive.mp3 | [Midnight Drive](https://opengameart.org/content/midnight-drive) | congusbongus | Loop crossfade |
 | street.mp3 | [Sky Blue Street](https://opengameart.org/node/170985) | MintoDog | — |
 | eighties.mp3 | [Synth Wave by Alex](https://opengameart.org/content/synth-wave-by-alex) | Pro Sensory (Alex McCulloch, who asks to be credited) | Loop crossfade |
-| rush.mp3 | [Virtual Rush](https://opengameart.org/content/virtual-rush) (loop version) | vitalezzz | — |
-| dark.mp3 | [Dark Night](https://opengameart.org/content/dark-night) | Pro Sensory (Alex McCulloch, who asks to be credited) | Loop crossfade |
-| rain.mp3 | [Rain (loopable)](https://opengameart.org/content/rain-loopable) | Ylmir | The four loops joined with 3 s crossfades |
 
 License: https://creativecommons.org/publicdomain/zero/1.0/

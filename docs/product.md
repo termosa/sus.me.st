@@ -49,7 +49,7 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 
 ## Night music
 
-- Ten free (CC0) tracks come with the app and work offline: Noir jazz (the default), Funk, Lo-fi, five synthwave tracks (Synthwave, Midnight drive, Blue street, Eighties, Virtual rush), Dark synth and Rain. They are steady and dense, without quiet passages, so they cover table noise; all loop without a gap in loudness. Sources are in `public/music/CREDITS.md`.
+- Five free (CC0) tracks come with the app and work offline: Noir jazz (first by default) and four synthwave tracks (Synthwave, Midnight drive, Blue street, Eighties). They are steady and dense, without quiet passages, so they cover table noise; all loop without a gap in loudness. Sources are in `public/music/CREDITS.md`.
 - The host adds their own audio files (stored on the device in IndexedDB, so they work offline) from the music button on the start screen or in the game header. Added files can be deleted; built-in tracks can be hidden instead. Hidden tracks are listed under "Hidden (n)", where they can be shown again, and next/previous at night skips them.
 - Tracks are reordered by dragging their grip (or with the arrow keys on it). The order is the order of next/previous at night; when no track was picked, the first one plays.
 - Any track can be renamed by double-tapping it (the first tap picks it): Enter, the check button or tapping away saves, Escape cancels, and an empty name brings back the track's own.
