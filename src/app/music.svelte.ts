@@ -14,6 +14,10 @@ const BUILT_IN: Track[] = [
   { id: 'builtin:funk', name: 'Funk', builtIn: true },
   { id: 'builtin:lofi', name: 'Lo-fi', builtIn: true },
   { id: 'builtin:synthwave', name: 'Synthwave', builtIn: true },
+  { id: 'builtin:drive', name: 'Midnight drive', builtIn: true },
+  { id: 'builtin:street', name: 'Blue street', builtIn: true },
+  { id: 'builtin:eighties', name: 'Eighties', builtIn: true },
+  { id: 'builtin:rush', name: 'Virtual rush', builtIn: true },
   { id: 'builtin:dark', name: 'Dark synth', builtIn: true },
   { id: 'builtin:rain', name: 'Rain', builtIn: true },
 ];
