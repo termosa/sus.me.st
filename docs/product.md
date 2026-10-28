@@ -47,6 +47,16 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 - Timer cues rise in pitch as time runs out: a low bell at halfway, two beeps at 10 s left (5 s on timers under 50 s), a tick at 2 s and 1 s, and a long tone at the end.
 - A falling chime starts the night, a rising one the day.
 
+## Night music
+
+- The host adds audio files (stored on the device in IndexedDB, so they work offline) from the music button on the start screen or in the game header.
+- One track is chosen at a time, or none. It loops through each night, fading in as night falls and out at morning; the choice can change before or during any night.
+- The voice lowers the music while it speaks.
+
+## Voting
+
+- Each candidate's count is one tap on a row of numbers (0 to the players in the game). Counts that would take the total past the table are greyed out; the last candidate gets the rest (V-7).
+
 ## Deferred to later versions
 
 - Manually assigning roles (host enters roles dealt with physical cards).

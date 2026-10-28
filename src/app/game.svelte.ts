@@ -8,6 +8,7 @@ import { forget, load, save } from '../platform/storage';
 import { newTimer, pauseTimer, startTimer, type Timer } from '../platform/timer';
 import { cue, say } from './cues';
 import { withViewTransition } from './motion/transition';
+import { music } from './music.svelte';
 import { announcement } from './narration';
 import { GAME_KEY, restore, type Saved, SCHEMA_VERSION } from './session';
 import { settings } from './settings.svelte';
@@ -102,6 +103,7 @@ class Session {
     this.#game = null;
     this.#timer = null;
     say(null);
+    music.setNight(false);
     this.game = null;
     this.timer = null;
     forget(GAME_KEY);
@@ -145,6 +147,8 @@ class Session {
     const saved: Saved = { schemaVersion: SCHEMA_VERSION, setup, events };
     save(GAME_KEY, saved);
     save(TIMER_KEY, this.#timer);
+    // Called inside the tap that changed the step, so the music may start.
+    music.setNight(isNight(game.step));
     const timer = this.#timer;
     const show = () => {
       this.game = game;

@@ -1,5 +1,6 @@
 import { type Note, playNotes, unlockAudio } from '../platform/audio';
 import { hush, speak, unlockSpeech } from '../platform/speech';
+import { music } from './music.svelte';
 import { settings } from './settings.svelte';
 
 // Timer cues climb in pitch as time runs out, so each one says how much is left.
@@ -35,6 +36,7 @@ export type Cue = keyof typeof CUES;
 export function unlockCues(): void {
   unlockAudio();
   unlockSpeech();
+  music.resume();
 }
 
 export function cue(name: Cue): void {
@@ -48,5 +50,5 @@ export function say(text: string | null, delayMs = 0): void {
   clearTimeout(pending);
   hush();
   if (!text || !settings.voice) return;
-  pending = setTimeout(() => speak(text), delayMs);
+  pending = setTimeout(() => speak(text, (speaking) => music.duck(speaking)), delayMs);
 }

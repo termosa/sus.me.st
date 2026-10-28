@@ -4,6 +4,11 @@ interface AudioSessionNavigator {
   audioSession?: { type: string };
 }
 
+/** The shared context, once a tap has created it. */
+export function audioContext(): AudioContext | null {
+  return context;
+}
+
 /** Must run inside a tap: iOS only lets audio start from a user gesture. */
 export function unlockAudio(): void {
   context ??= new AudioContext();

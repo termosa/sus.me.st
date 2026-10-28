@@ -18,8 +18,8 @@ export function unlockSpeech(): void {
   s.speak(new SpeechSynthesisUtterance(''));
 }
 
-/** Says `text`, cutting off whatever was still being said. */
-export function speak(text: string): void {
+/** Says `text`, cutting off whatever was still being said; `onspeaking` reports start and end. */
+export function speak(text: string, onspeaking?: (speaking: boolean) => void): void {
   const s = synth();
   if (!s) return;
   s.cancel();
@@ -27,6 +27,11 @@ export function speak(text: string): void {
   utterance.lang = 'en-US';
   const v = voice(s);
   if (v) utterance.voice = v;
+  if (onspeaking) {
+    utterance.onstart = () => onspeaking(true);
+    utterance.onend = () => onspeaking(false);
+    utterance.onerror = () => onspeaking(false);
+  }
   s.speak(utterance);
 }
 

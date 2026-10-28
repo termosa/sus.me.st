@@ -4,6 +4,7 @@
   import { alivePlayers } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
   import { session } from '../game.svelte';
+  import CountPicker from './CountPicker.svelte';
   import Icon from './Icon.svelte';
 
   /** Vote counts per candidate (V-7: the last one gets the rest), or the raise count (T-5). */
@@ -16,10 +17,6 @@
   const rest = $derived(alive - counts.reduce((a, b) => a + b, 0));
   const passes = $derived(raisePasses(yes, alive));
 
-  function bump(i: number, by: number) {
-    const value = (counts[i] ?? 0) + by;
-    if (value >= 0 && rest - by >= 0) counts[i] = value;
-  }
 
   function confirm() {
     if (raise) session.dispatch({ type: 'raise', yes });
@@ -37,32 +34,23 @@
     <div class="seats">
       {#each candidates as seat (seat)}<span class="seat">{seat}</span>{/each}
     </div>
-    <div class="row">
-      <button type="button" aria-label="Less" disabled={yes === 0} onclick={() => yes--}>
-        <Icon name="minus" />
-      </button>
-      <span class="count" class:passes>{yes}</span>
-      <button type="button" aria-label="More" disabled={yes === alive} onclick={() => yes++}>
-        <Icon name="plus" />
-      </button>
-    </div>
-    <div class="need">&gt; {alive / 2}</div>
+    <CountPicker value={yes} max={alive} label="Hands raised" onpick={(n) => (yes = n)} />
+    <div class="need" class:passes>{yes} &gt; {alive / 2}</div>
   {:else}
     {#each candidates as seat, i (seat)}
       <div class="row">
         <span class="seat">{seat}</span>
         {#if i < counts.length}
-          <button type="button" aria-label="Less" onclick={() => bump(i, -1)}>
-            <Icon name="minus" />
-          </button>
-          <span class="count">{counts[i]}</span>
-          <button type="button" aria-label="More" onclick={() => bump(i, 1)}>
-            <Icon name="plus" />
-          </button>
+          <!-- Up to what is still unassigned, so the total never passes the table. -->
+          <CountPicker
+            value={counts[i] ?? 0}
+            max={alive}
+            limit={(counts[i] ?? 0) + rest}
+            label="Votes for {seat}"
+            onpick={(n) => (counts[i] = n)}
+          />
         {:else}
-          <span></span>
           <span class="count rest">{rest}</span>
-          <span></span>
         {/if}
       </div>
     {/each}
@@ -97,18 +85,9 @@
 
   .row {
     display: grid;
-    grid-template-columns: 56px var(--tap) 1fr var(--tap);
+    grid-template-columns: 48px 1fr;
     align-items: center;
     gap: 10px;
-  }
-
-  .row button {
-    display: grid;
-    place-items: center;
-  }
-
-  .row button:disabled {
-    opacity: 0.3;
   }
 
   .seats {
@@ -167,6 +146,10 @@
 
     .seat {
       height: 40px;
+    }
+
+    .panel :global(.picker button) {
+      min-height: 36px;
     }
 
     .count {

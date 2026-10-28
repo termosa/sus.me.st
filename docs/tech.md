@@ -195,6 +195,8 @@ src/
     wakelock.ts           # request/re-acquire on visibilitychange
     audio.ts              # AudioContext unlock, synthesized notes, audioSession setting
     speech.ts             # on-device speech synthesis for announcements
+    music.ts              # looping night music through the AudioContext (fades work on iOS)
+    tracks.ts             # music files in IndexedDB
     haptics.ts            # vibrate() with feature detection
     history-guard.ts      # back-navigation sentinel
     pwa.ts                # useRegisterSW wrapper, update-only-between-games

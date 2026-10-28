@@ -7,6 +7,7 @@
   import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
+  import MusicPanel from '../components/MusicPanel.svelte';
   import { ROLE_ICON } from '../components/RoleArt.svelte';
   import SeatGrid from '../components/SeatGrid.svelte';
   import SeatSheet from '../components/SeatSheet.svelte';
@@ -27,6 +28,7 @@
 
   let sheetSeat = $state<number | null>(null);
   let menuOpen = $state(false);
+  let musicOpen = $state(false);
   let peek = $state(false);
   /** Seats chosen on the grid during the shooting or the best move. */
   let picks = $state<number[]>([]);
@@ -107,6 +109,9 @@
       oncontextmenu={(e) => e.preventDefault()}
     >
       <Icon name="eye" />
+    </button>
+    <button type="button" class="icon" aria-label="Music" onclick={() => (musicOpen = true)}>
+      <Icon name="music" />
     </button>
     <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
       <Icon name="menu" />
@@ -250,6 +255,12 @@
   <SeatSheet {game} seat={sheetSeat} onclose={() => (sheetSeat = null)} />
 {/if}
 
+{#if musicOpen}
+  <Sheet onclose={() => (musicOpen = false)}>
+    <MusicPanel />
+  </Sheet>
+{/if}
+
 {#if menuOpen}
   <Sheet onclose={() => (menuOpen = false)}>
     <SettingsPanel />
@@ -291,7 +302,7 @@
 
   header {
     display: grid;
-    grid-template-columns: var(--tap) 1fr var(--tap) var(--tap);
+    grid-template-columns: var(--tap) 1fr var(--tap) var(--tap) var(--tap);
     align-items: center;
     view-transition-name: header;
   }

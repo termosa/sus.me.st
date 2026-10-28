@@ -5,12 +5,14 @@
   import { keepAwake } from '../../platform/wakelock';
   import Hint from '../components/Hint.svelte';
   import Icon from '../components/Icon.svelte';
+  import MusicPanel from '../components/MusicPanel.svelte';
   import SettingsPanel from '../components/SettingsPanel.svelte';
   import Sheet from '../components/Sheet.svelte';
   import UpdateButton from '../components/UpdateButton.svelte';
   import { session } from '../game.svelte';
 
   let settingsOpen = $state(false);
+  let musicOpen = $state(false);
 
   function start(count: PlayerCount) {
     keepAwake(true);
@@ -22,6 +24,9 @@
 <main>
   <header>
     <UpdateButton />
+    <button type="button" class="icon" aria-label="Music" onclick={() => (musicOpen = true)}>
+      <Icon name="music" />
+    </button>
     <button type="button" class="icon" aria-label="Settings" onclick={() => (settingsOpen = true)}>
       <Icon name="sliders" />
     </button>
@@ -47,6 +52,12 @@
     </p>
   {/if}
 </main>
+
+{#if musicOpen}
+  <Sheet onclose={() => (musicOpen = false)}>
+    <MusicPanel />
+  </Sheet>
+{/if}
 
 {#if settingsOpen}
   <Sheet onclose={() => (settingsOpen = false)}>
