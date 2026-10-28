@@ -12,7 +12,7 @@
 <style>
   .hint {
     margin: 0;
-    max-width: 36ch;
+    max-width: var(--content-max);
     color: var(--text-dim);
     font-size: 15px;
     line-height: 1.35;
