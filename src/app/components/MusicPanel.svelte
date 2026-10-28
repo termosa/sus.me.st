@@ -56,6 +56,20 @@
     return 0;
   }
 
+  /** The last tap on a track, to tell a double tap: the first picks it, the second renames it. */
+  let lastTap = { id: '', at: 0 };
+
+  function tap(id: string) {
+    const now = performance.now();
+    if (lastTap.id === id && now - lastTap.at < 400) {
+      lastTap = { id: '', at: 0 };
+      editing = id;
+      return;
+    }
+    lastTap = { id, at: now };
+    music.select(id);
+  }
+
   /** Arrow keys on a grip move its track; the grip keeps the focus. */
   async function nudge(event: KeyboardEvent, id: string, index: number) {
     const by = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
@@ -97,7 +111,9 @@
 </script>
 
 <div class="music">
-  <Hint text="Plays during the night to cover table noise. Pick the track before night falls." />
+  <Hint
+    text="Plays during the night to cover table noise. Pick the track before night falls; double-tap one to rename it."
+  />
 
   <label class="switch">
     <Icon name="music" />
@@ -147,7 +163,7 @@
               if (e.key === 'Escape') editing = null;
             }}
           />
-          <!-- Keeps the focus in the field, so its blur doesn't save first. -->
+          <!-- In place of hide or delete. Keeps the focus in the field, so its blur doesn't save first. -->
           <button
             type="button"
             class="icon-button"
@@ -163,38 +179,31 @@
             class="track"
             class:on={music.selected === track.id}
             aria-pressed={music.selected === track.id}
-            onclick={() => music.select(track.id)}
+            title="Double-tap to rename"
+            onclick={() => tap(track.id)}
           >
             <Icon name="music" />
             <span>{track.name}</span>
           </button>
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Rename {track.name}"
-            onclick={() => (editing = track.id)}
-          >
-            <Icon name="edit" />
-          </button>
-        {/if}
-        {#if track.builtIn}
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Hide {track.name}"
-            onclick={() => music.hide(track.id)}
-          >
-            <Icon name="hide" />
-          </button>
-        {:else}
-          <button
-            type="button"
-            class="icon-button"
-            aria-label="Delete {track.name}"
-            onclick={() => music.remove(track.id)}
-          >
-            <Icon name="remove" />
-          </button>
+          {#if track.builtIn}
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Hide {track.name}"
+              onclick={() => music.hide(track.id)}
+            >
+              <Icon name="hide" />
+            </button>
+          {:else}
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Delete {track.name}"
+              onclick={() => music.remove(track.id)}
+            >
+              <Icon name="remove" />
+            </button>
+          {/if}
         {/if}
       </div>
     {/each}
@@ -267,7 +276,7 @@
 
   .row {
     display: grid;
-    grid-template-columns: 32px 1fr var(--tap) var(--tap);
+    grid-template-columns: 32px 1fr var(--tap);
     gap: 8px;
     position: relative;
   }
