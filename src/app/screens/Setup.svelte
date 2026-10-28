@@ -1,9 +1,9 @@
 <script lang="ts">
   import { PLAYER_COUNTS, type PlayerCount } from '../../engine/rules';
-  import { unlockAudio } from '../../platform/audio';
   import { isIOS, isStandalone } from '../../platform/pwa';
   import { persistStorage } from '../../platform/storage';
   import { keepAwake } from '../../platform/wakelock';
+  import Hint from '../components/Hint.svelte';
   import Icon from '../components/Icon.svelte';
   import UpdateButton from '../components/UpdateButton.svelte';
   import { session } from '../game.svelte';
@@ -12,8 +12,6 @@
   let settingsOpen = $state(false);
 
   function start(count: PlayerCount) {
-    // Inside the tap: iOS only unlocks audio from a user gesture.
-    unlockAudio();
     keepAwake(true);
     persistStorage();
     session.start(count);
@@ -29,6 +27,8 @@
   </header>
 
   <div class="logo"><Icon name="mask" size={96} /></div>
+
+  <Hint text="How many players?" />
 
   <div class="counts">
     {#each PLAYER_COUNTS as count (count)}
@@ -54,7 +54,7 @@
 <style>
   main {
     display: grid;
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto 1fr auto auto auto;
     justify-items: center;
     height: 100%;
     padding: 16px;
@@ -99,6 +99,17 @@
 
   .count :global(.icon) {
     color: var(--text-dim);
+  }
+
+  @media (max-height: 500px) {
+    .logo {
+      display: none;
+    }
+
+    .counts {
+      align-self: center;
+      padding-bottom: 0;
+    }
   }
 
   .install {

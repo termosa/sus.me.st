@@ -11,6 +11,11 @@ export interface Settings {
   timings: Timings;
   /** iOS: play cues with the silent switch on (pauses other audio). */
   cuesInSilentMode: boolean;
+  sounds: boolean;
+  /** Announce speakers, votes and night steps aloud. */
+  voice: boolean;
+  /** A line of text explaining the current step, for first-time hosts. */
+  hints: boolean;
 }
 
 function initial(): Settings {
@@ -20,7 +25,13 @@ function initial(): Settings {
     const value = saved?.timings?.[key];
     if (typeof value === 'number' && value > 0) timings[key] = value;
   }
-  return { timings, cuesInSilentMode: saved?.cuesInSilentMode === true };
+  return {
+    timings,
+    cuesInSilentMode: saved?.cuesInSilentMode === true,
+    sounds: saved?.sounds !== false,
+    voice: saved?.voice !== false,
+    hints: saved?.hints !== false,
+  };
 }
 
 export const settings: Settings = $state(initial());

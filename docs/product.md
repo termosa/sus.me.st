@@ -32,7 +32,7 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 - The host asks the player for a number and taps that card (or passes the phone).
 - Tap 1: the card zooms in, covering the others.
 - Tap 2: the card flips and reveals the role.
-- Tap 3: the card hides and the view returns to the grid. The picked card is no longer shown; the remaining cards keep their numbers.
+- Tap 3: the card hides and the view returns to the grid. The picked card is no longer shown; the remaining cards are renumbered from 1, so the numbers never show which cards were taken.
 
 ## Settings
 

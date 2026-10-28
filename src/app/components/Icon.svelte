@@ -35,6 +35,8 @@
     plus: 'M12 5v14M5 12h14',
     minus: 'M5 12h14',
     bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
+    volume: 'M4 9h4l5-4v14l-5-4H4zM16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11',
+    info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8v.01',
   } as const;
 
   export type IconName = keyof typeof PATHS;

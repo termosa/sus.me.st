@@ -2,7 +2,14 @@
   import type { Timings } from '../../engine/rules';
   import Icon, { type IconName } from '../components/Icon.svelte';
   import Sheet from '../components/Sheet.svelte';
-  import { CONFIGURABLE, resetTimings, saveSettings, settings } from '../settings.svelte';
+  import { say } from '../cues';
+  import {
+    CONFIGURABLE,
+    resetTimings,
+    type Settings,
+    saveSettings,
+    settings,
+  } from '../settings.svelte';
 
   let { onclose }: { onclose: () => void } = $props();
 
@@ -11,6 +18,21 @@
     donCheck: { icon: 'hat', label: 'Don' },
     sheriffCheck: { icon: 'star', label: 'Sheriff' },
   };
+
+  type Switch = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
+
+  const TOGGLES: { key: Switch; icon: IconName; label: string }[] = [
+    { key: 'sounds', icon: 'volume', label: 'Sounds' },
+    { key: 'voice', icon: 'mic', label: 'Voice' },
+    { key: 'hints', icon: 'info', label: 'Hints' },
+    { key: 'cuesInSilentMode', icon: 'bell', label: 'Cues in silent mode' },
+  ];
+
+  function toggled() {
+    saveSettings();
+    // Turning the voice off also stops what it is saying.
+    if (!settings.voice) say(null);
+  }
 
   function step(key: keyof Timings, by: number) {
     settings.timings[key] = Math.max(5, settings.timings[key] + by);
@@ -34,15 +56,13 @@
     </div>
   {/each}
 
-  <label class="row toggle">
-    <Icon name="bell" />
-    <span class="label">Cues in silent mode</span>
-    <input
-      type="checkbox"
-      bind:checked={settings.cuesInSilentMode}
-      onchange={saveSettings}
-    />
-  </label>
+  {#each TOGGLES as t (t.key)}
+    <label class="row toggle">
+      <Icon name={t.icon} />
+      <span class="label">{t.label}</span>
+      <input type="checkbox" bind:checked={settings[t.key]} onchange={toggled} />
+    </label>
+  {/each}
 
   <button type="button" class="reset" aria-label="Default timings" onclick={resetTimings}>
     <Icon name="restart" />

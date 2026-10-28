@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { beep } from '../../platform/audio';
   import { vibrate } from '../../platform/haptics';
   import { remaining, type Timer } from '../../platform/timer';
+  import { cue } from '../cues';
   import Icon from './Icon.svelte';
 
   let { timer, ontoggle }: { timer: Timer; ontoggle: () => void } = $props();
@@ -17,11 +17,15 @@
   const warnMs = $derived(timer.totalMs > 20_000 ? 10_000 : 5_000);
   const seconds = $derived(Math.ceil(left / 1000));
 
+  // Read every start or pause against the current time, not the one from the last tick;
+  // otherwise starting shows the time spent idle on top of the countdown.
+  $effect.pre(() => {
+    void timer;
+    now = Date.now();
+  });
+
   $effect(() => {
-    if (timer.endsAt === null) {
-      now = Date.now();
-      return;
-    }
+    if (timer.endsAt === null) return;
     const id = setInterval(() => {
       now = Date.now();
     }, 250);
@@ -41,11 +45,11 @@
   $effect(() => {
     const current = left;
     if (previous > warnMs && current <= warnMs && current > 0) {
-      beep();
+      cue('warn');
       vibrate(120);
     }
     if (previous > 0 && current === 0) {
-      beep(true);
+      cue('end');
       vibrate([250, 120, 250]);
     }
     previous = current;
@@ -84,10 +88,17 @@
     position: relative;
     width: min(56vw, 34dvh, 240px);
     aspect-ratio: 1;
+    container-type: inline-size;
     padding: 0;
     border-radius: 50%;
     background: none;
     color: var(--text);
+  }
+
+  @media (orientation: landscape) and (max-height: 560px) {
+    .ring {
+      width: min(42dvh, 200px);
+    }
   }
 
   svg {
@@ -130,7 +141,7 @@
 
   .digits {
     position: relative;
-    font-size: clamp(48px, 16vw, 88px);
+    font-size: 36cqi;
     font-weight: 800;
   }
 

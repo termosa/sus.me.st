@@ -97,6 +97,9 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 8px;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
   }
 
   .seat {

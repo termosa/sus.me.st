@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isAllowed, newGame, RuleError, reduce, replay } from './game';
 import { DEFAULT_TIMINGS, type PlayerCount, type Role } from './rules';
-import { isSilent, stepKey, stepSeconds } from './selectors';
+import { cardsLeft, isSilent, stepKey, stepSeconds } from './selectors';
 import type { Game, GameEvent, Setup } from './types';
 
 // Card k goes to seat k, so: seat 1 Don, 2–3 Mafia, 4 Sheriff, the rest Citizens.
@@ -37,6 +37,23 @@ describe('dealing (S-6)', () => {
     expect(game.players[0]?.role).toBe('citizen');
     expect(game.players[1]?.role).toBe('don');
     expect(game.players[4]?.role).toBe('sheriff');
+  });
+
+  it('numbers the cards still face down 1, 2, 3… so picks leave no gaps', () => {
+    const game = play([
+      { type: 'pick', card: 7 },
+      { type: 'pick', card: 2 },
+    ]);
+    expect(cardsLeft(game)).toEqual([
+      { card: 0, label: 1 },
+      { card: 1, label: 2 },
+      { card: 3, label: 3 },
+      { card: 4, label: 4 },
+      { card: 5, label: 5 },
+      { card: 6, label: 6 },
+      { card: 8, label: 7 },
+      { card: 9, label: 8 },
+    ]);
   });
 
   it('rejects a card that was already taken', () => {

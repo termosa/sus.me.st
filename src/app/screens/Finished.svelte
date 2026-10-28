@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { Game } from '../../engine/types';
+  import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
   import SeatGrid from '../components/SeatGrid.svelte';
   import UpdateButton from '../components/UpdateButton.svelte';
   import { session } from '../game.svelte';
+  import { hint } from '../narration';
 
   let { game }: { game: Game } = $props();
 
@@ -59,6 +61,8 @@
 
   <SeatGrid {game} showRoles enabled={() => false} onpick={() => {}} />
 
+  <Hint text={hint(game)} />
+
   <HoldButton label="New game" tone="plain" onconfirm={session.quit}>
     <Icon name="restart" size={28} />
   </HoldButton>
@@ -67,7 +71,7 @@
 <style>
   main {
     display: grid;
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto 1fr auto auto auto;
     height: 100%;
     padding: 8px 16px 16px;
     gap: 16px;
@@ -143,5 +147,48 @@
 
   main > :global(.hold) {
     min-height: 64px;
+  }
+
+  main > :global(.hint) {
+    justify-self: center;
+  }
+
+  @media (orientation: landscape) {
+    main {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        'head head'
+        'banner table'
+        'log table'
+        'log hint'
+        'log new';
+      column-gap: 32px;
+    }
+
+    header {
+      grid-area: head;
+    }
+
+    .banner {
+      grid-area: banner;
+    }
+
+    .log {
+      grid-area: log;
+    }
+
+    main > :global(.grid) {
+      grid-area: table;
+      align-self: center;
+    }
+
+    main > :global(.hint) {
+      grid-area: hint;
+    }
+
+    main > :global(.hold) {
+      grid-area: new;
+    }
   }
 </style>

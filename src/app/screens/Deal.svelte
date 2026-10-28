@@ -1,21 +1,24 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { fade } from 'svelte/transition';
+  import { cardsLeft } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
+  import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
   import RoleArt from '../components/RoleArt.svelte';
   import { session } from '../game.svelte';
   import { shrinkAway, zoomFrom } from '../motion/transition';
+  import { hint } from '../narration';
 
   let { game }: { game: Game } = $props();
 
   const seat = $derived(game.taken.length + 1);
-  // Picked cards leave the grid; the rest keep their numbers (S-6).
-  const cards = $derived(game.setup.deck.map((_, i) => i).filter((i) => !game.taken.includes(i)));
+  // Picked cards leave the grid; the rest are renumbered from 1 (S-6).
+  const cards = $derived(cardsLeft(game));
 
   // Tap 1 zooms the card, tap 2 reveals the role, tap 3 hides it and gives it to the seat.
-  let open = $state<{ card: number; from: DOMRect } | null>(null);
+  let open = $state<{ card: number; label: number; from: DOMRect } | null>(null);
   let revealed = $state(false);
   let closing = $state(false);
   let bigCard: HTMLElement | undefined = $state();
@@ -23,9 +26,9 @@
 
   const FLIP_MS = 450;
 
-  function zoom(card: number, event: MouseEvent) {
+  function zoom(card: number, label: number, event: MouseEvent) {
     if (open) return;
-    open = { card, from: (event.currentTarget as HTMLElement).getBoundingClientRect() };
+    open = { card, label, from: (event.currentTarget as HTMLElement).getBoundingClientRect() };
     revealed = false;
   }
 
@@ -77,17 +80,19 @@
     <span class="spacer"></span>
   </header>
 
+  <Hint text={hint(game)} />
+
   <div class="grid">
-    {#each cards as card (card)}
+    {#each cards as { card, label } (card)}
       <button
         type="button"
         class="card"
         class:hidden={open?.card === card}
         animate:flip={{ duration: 300 }}
         out:fade={{ duration: 0 }}
-        onclick={(e) => zoom(card, e)}
+        onclick={(e) => zoom(card, label, e)}
       >
-        {card + 1}
+        {label}
       </button>
     {/each}
   </div>
@@ -113,7 +118,7 @@
     oncontextmenu={(e) => e.preventDefault()}
   >
     <div class="inner">
-      <div class="face back">{open.card + 1}</div>
+      <div class="face back">{open.label}</div>
       <div class="face front">
         {#if openRole}<RoleArt role={openRole} />{/if}
       </div>
@@ -124,13 +129,15 @@
 <style>
   main {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    justify-items: center;
     height: 100%;
     padding: 12px 16px 16px;
     gap: 16px;
   }
 
   header {
+    justify-self: stretch;
     display: grid;
     grid-template-columns: var(--tap) 1fr var(--tap);
     align-items: center;
@@ -150,12 +157,23 @@
     font-weight: 800;
   }
 
+  /* Sized by the height too, so 3×4 cards (5×2 on a wide screen) always fit. */
   .grid {
+    --rows: 4;
+    --cols: 3;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(var(--cols), 1fr);
     grid-auto-rows: min-content;
     align-content: center;
     gap: 12px;
+    width: min(100%, (100dvh - 180px) * var(--cols) * 3 / (var(--rows) * 4), 640px);
+  }
+
+  @media (orientation: landscape) {
+    .grid {
+      --rows: 2;
+      --cols: 5;
+    }
   }
 
   .card {

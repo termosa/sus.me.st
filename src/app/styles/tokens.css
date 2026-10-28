@@ -16,6 +16,8 @@
   --radius: 16px;
   --gap: 12px;
   --tap: 56px;
+  /* Widest the table and the buttons grow on tablets. */
+  --content-max: 560px;
 
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }

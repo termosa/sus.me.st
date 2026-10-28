@@ -4,6 +4,7 @@
   import { BEST_MOVE_PICKS, teamOf } from '../../engine/rules';
   import { isSilent, stepKey } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
+  import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
   import { ROLE_ICON } from '../components/RoleArt.svelte';
@@ -13,6 +14,7 @@
   import TimerRing from '../components/TimerRing.svelte';
   import VotePanel from '../components/VotePanel.svelte';
   import { session } from '../game.svelte';
+  import { hint } from '../narration';
 
   let { game }: { game: Game } = $props();
 
@@ -112,6 +114,8 @@
 
   {#key key}
     <section class="stage" in:fade={{ duration: 200 }}>
+      <Hint text={hint(game)} />
+      <div class="focus">
       {#if step.kind === 'night0'}
         <div class="who">
           <Icon name={step.stage === 'mafia' ? 'mask' : step.stage === 'sheriff' ? 'star' : 'moon'} size={56} />
@@ -161,6 +165,7 @@
           <TimerRing {timer} ontoggle={session.toggleTimer} />
         {/key}
       {/if}
+      </div>
 
       {#if step.kind === 'speech' && game.nominations.length > 0}
         <div class="noms">
@@ -189,42 +194,45 @@
         </div>
       {/if}
 
-      <div class="actions">
-        {#if step.kind === 'night' && step.stage === 'shoot'}
-          <button
-            type="button"
-            class="secondary"
-            aria-label="Miss"
-            onclick={() => session.dispatch({ type: 'shoot', seat: null })}
-          >
-            <Icon name="miss" size={32} />
-          </button>
-          <button
-            type="button"
-            class="go"
-            aria-label="Kill"
-            disabled={picks.length === 0}
-            onclick={() => session.dispatch({ type: 'shoot', seat: picks[0] ?? null })}
-          >
-            <Icon name="target" size={28} /><span>{picks[0] ?? ''}</span>
-          </button>
-        {:else if step.kind === 'night' && step.stage === 'bestMove'}
-          <button
-            type="button"
-            class="go"
-            aria-label="Confirm"
-            onclick={() => session.dispatch({ type: 'bestMove', seats: [...picks] })}
-          >
-            <Icon name="check" size={32} />
-          </button>
-        {:else if step.kind !== 'vote' && step.kind !== 'raise'}
-          <button type="button" class="go" aria-label="Next" onclick={next}>
-            <Icon name="next" size={32} />
-          </button>
-        {/if}
-      </div>
     </section>
   {/key}
+
+  {#if step.kind !== 'vote' && step.kind !== 'raise'}
+  <div class="actions">
+    {#if step.kind === 'night' && step.stage === 'shoot'}
+      <button
+        type="button"
+        class="secondary"
+        aria-label="Miss"
+        onclick={() => session.dispatch({ type: 'shoot', seat: null })}
+      >
+        <Icon name="miss" size={32} />
+      </button>
+      <button
+        type="button"
+        class="go"
+        aria-label="Kill"
+        disabled={picks.length === 0}
+        onclick={() => session.dispatch({ type: 'shoot', seat: picks[0] ?? null })}
+      >
+        <Icon name="target" size={28} /><span>{picks[0] ?? ''}</span>
+      </button>
+    {:else if step.kind === 'night' && step.stage === 'bestMove'}
+      <button
+        type="button"
+        class="go"
+        aria-label="Confirm"
+        onclick={() => session.dispatch({ type: 'bestMove', seats: [...picks] })}
+      >
+        <Icon name="check" size={32} />
+      </button>
+    {:else}
+      <button type="button" class="go" aria-label="Next" onclick={next}>
+        <Icon name="next" size={32} />
+      </button>
+    {/if}
+  </div>
+  {/if}
 
   <SeatGrid
     {game}
@@ -267,7 +275,7 @@
 <style>
   main {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
     padding: 8px 16px 16px;
     gap: 12px;
@@ -309,9 +317,22 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     gap: 16px;
     min-height: 0;
+    overflow-y: auto;
+  }
+
+  .stage > :global(*) {
+    flex-shrink: 0;
+  }
+
+  .focus {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
   }
 
   .who {
@@ -385,7 +406,8 @@
     display: flex;
     gap: var(--gap);
     width: 100%;
-    max-width: 360px;
+    max-width: var(--content-max);
+    margin-inline: auto;
   }
 
   .actions button {
@@ -410,6 +432,55 @@
 
   .secondary {
     width: 96px;
+  }
+
+  /* Tablets and phones on their side: the step on the left, the table on the right. */
+  @media (orientation: landscape) {
+    main {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* The table and its buttons sit together, centred beside the step. */
+      grid-template-rows: auto 1fr auto auto 1fr;
+      grid-template-areas:
+        'head head'
+        'stage .'
+        'stage table'
+        'stage actions'
+        'stage .';
+      column-gap: 32px;
+    }
+
+    header {
+      grid-area: head;
+    }
+
+    .stage {
+      grid-area: stage;
+    }
+
+    .actions {
+      grid-area: actions;
+    }
+
+    main > :global(.grid) {
+      grid-area: table;
+    }
+  }
+
+  /* Phones on their side: the number goes beside the timer to save height. */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .stage {
+      gap: 10px;
+    }
+
+    .focus {
+      flex-direction: row;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .actions button {
+      min-height: 52px;
+    }
   }
 
   .menu {

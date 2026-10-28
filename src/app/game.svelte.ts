@@ -6,7 +6,9 @@ import type { Game, GameEvent, Setup, Step } from '../engine/types';
 import { vibrate } from '../platform/haptics';
 import { forget, load, save } from '../platform/storage';
 import { newTimer, pauseTimer, startTimer, type Timer } from '../platform/timer';
+import { cue, say } from './cues';
 import { withViewTransition } from './motion/transition';
+import { announcement } from './narration';
 import { GAME_KEY, restore, type Saved, SCHEMA_VERSION } from './session';
 import { settings } from './settings.svelte';
 
@@ -14,6 +16,10 @@ const TIMER_KEY = 'timer:v1';
 
 function isNight(step: Step): boolean {
   return step.kind === 'night' || step.kind === 'night0';
+}
+
+function phaseChanged(before: Game, after: Game): boolean {
+  return isNight(before.step) !== isNight(after.step);
 }
 
 function loadTimer(): Timer | null {
@@ -65,17 +71,21 @@ class Session {
     } catch (error) {
       if (!(error instanceof RuleError)) throw error;
       vibrate(80);
+      cue('error');
       return false;
     }
-    const phaseChange = isNight(game.step) !== isNight(next.step);
-    this.#commit(this.#setup, [...this.#events, event], next, phaseChange);
+    this.#commit(this.#setup, [...this.#events, event], next, phaseChanged(game, next));
+    this.#narrate(game, next);
     return true;
   };
 
   undo = (): void => {
     if (!this.#setup || this.#events.length === 0) return;
+    const before = this.#game;
     const events = this.#events.slice(0, -1);
-    this.#commit(this.#setup, events, replay(this.#setup, events));
+    const game = replay(this.#setup, events);
+    this.#commit(this.#setup, events, game);
+    this.#narrate(before, game);
   };
 
   quit = (): void => {
@@ -83,6 +93,7 @@ class Session {
     this.#events = [];
     this.#game = null;
     this.#timer = null;
+    say(null);
     this.game = null;
     this.timer = null;
     forget(GAME_KEY);
@@ -96,6 +107,14 @@ class Session {
     this.timer = this.#timer;
     save(TIMER_KEY, this.#timer);
   };
+
+  /** Cues a change of phase and calls out a new step; the same step stays quiet. */
+  #narrate(before: Game | null, after: Game): void {
+    if (before && stepKey(before) === stepKey(after)) return;
+    const phaseChange = before !== null && phaseChanged(before, after);
+    if (phaseChange) cue(isNight(after.step) ? 'night' : 'day');
+    say(announcement(after), phaseChange ? 900 : 0);
+  }
 
   #commit(setup: Setup, events: GameEvent[], game: Game, animate = false): void {
     this.#setup = setup;

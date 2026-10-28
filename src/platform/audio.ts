@@ -19,19 +19,32 @@ export function playThroughSilentMode(on: boolean): void {
   if (session) session.type = on ? 'playback' : 'auto';
 }
 
-/** A short synthesized tone; `long` marks the end of a timer. */
-export function beep(long = false): void {
+export interface Note {
+  hz: number;
+  /** Seconds after the first note. */
+  at: number;
+  length: number;
+  /** Peak volume, 0–1. */
+  gain: number;
+  wave?: OscillatorType;
+}
+
+/** Plays synthesized notes; silent until {@link unlockAudio} has run. */
+export function playNotes(notes: readonly Note[]): void {
   if (!context) return;
   if (context.state !== 'running') void context.resume();
-  const at = context.currentTime;
-  const length = long ? 0.6 : 0.15;
-  const osc = context.createOscillator();
-  const gain = context.createGain();
-  osc.frequency.value = long ? 660 : 880;
-  gain.gain.setValueAtTime(0.0001, at);
-  gain.gain.exponentialRampToValueAtTime(0.4, at + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
-  osc.connect(gain).connect(context.destination);
-  osc.start(at);
-  osc.stop(at + length + 0.05);
+  const start = context.currentTime;
+  for (const note of notes) {
+    const at = start + note.at;
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    osc.type = note.wave ?? 'sine';
+    osc.frequency.value = note.hz;
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(note.gain, at + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + note.length);
+    osc.connect(gain).connect(context.destination);
+    osc.start(at);
+    osc.stop(at + note.length + 0.05);
+  }
 }

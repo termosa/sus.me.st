@@ -103,7 +103,7 @@ Design:
 
 - **vite-plugin-pwa 2.0.0** (2026-10-03; Workbox 7.4; supports Vite 8) with `strategies: 'generateSW'`, `registerType: 'prompt'`. It precaches all build assets and sets `navigateFallback: 'index.html'`. A hand-written SW is ~40 lines but needs a hashed precache manifest generated from the build. The plugin does that, and you can still drop to `injectManifest` later.
 - **Update strategy (never reload mid-game):** a new SW installs in the background and **waits**: no `skipWaiting`, no `clientsClaim`. Use `useRegisterSW` (`virtual:pwa-register/svelte`) to read `needRefresh`. Show an "Update ready" button **only when `phase` is `setup` or `finished`**, and call `updateServiceWorker(true)` only on that explicit tap. Call `registration.update()` on app open when online. Because state persists, even an unexpected reload resumes the game.
-- **Manifest:** `name`, `short_name`, `start_url: "."`, `scope`, `display: "standalone"`, `orientation: "portrait"` (Android only), dark `background_color`/`theme_color`, icons 192/512 plus `maskable`. Generate the icons with `@vite-pwa/assets-generator` 2.0. Also add `<link rel="apple-touch-icon">` (180px) and `<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">`.
+- **Manifest:** `name`, `short_name`, `start_url: "."`, `scope`, `display: "standalone"`, `orientation: "any"` (phones and tablets, either way up), dark `background_color`/`theme_color`, icons 192/512 plus `maskable`. Generate the icons with `@vite-pwa/assets-generator` 2.0. Also add `<link rel="apple-touch-icon">` (180px) and `<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">`.
 - **iOS install:**
   - iOS has no `beforeinstallprompt`. Show a one-time "Share → Add to Home Screen" hint when `!matchMedia('(display-mode: standalone)').matches` on iOS.
   - Since **iOS 26**, Add to Home Screen opens sites as web apps by default ([heise](https://heise.de/-10749652)).
@@ -193,12 +193,15 @@ src/
     storage.ts            # localStorage load/save, schemaVersion migrations
     clock.ts              # now(), remaining(endsAt)
     wakelock.ts           # request/re-acquire on visibilitychange
-    audio.ts              # AudioContext unlock, beep(), audioSession setting
+    audio.ts              # AudioContext unlock, synthesized notes, audioSession setting
+    speech.ts             # on-device speech synthesis for announcements
     haptics.ts            # vibrate() with feature detection
     history-guard.ts      # back-navigation sentinel
     pwa.ts                # useRegisterSW wrapper, update-only-between-games
   app/                    # Svelte UI
     game.svelte.ts        # $state.raw game, dispatch(), undo(), auto-save
+    narration.ts          # per-step voice announcement and first-time hint text
+    cues.ts               # sound cues and voice, gated by the settings
     App.svelte            # switches screen by game.phase (+ view transition)
     screens/              # Setup, Deal, Day, Nomination, Voting, Night, Finished
     components/           # CardGrid, RoleCard, TimerRing, PlayerRow, FoulBadge, UndoBar

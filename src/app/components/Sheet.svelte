@@ -31,6 +31,8 @@
     left: 0;
     right: 0;
     bottom: 0;
+    max-width: var(--content-max);
+    margin-inline: auto;
     z-index: 11;
     display: grid;
     gap: var(--gap);

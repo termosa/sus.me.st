@@ -157,4 +157,25 @@
     background: var(--accent);
     color: var(--bg);
   }
+
+  /* Phones on their side: tighter rows so a few candidates fit without scrolling. */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .panel {
+      --tap: 44px;
+      gap: 6px;
+    }
+
+    .seat {
+      height: 40px;
+    }
+
+    .count {
+      font-size: 28px;
+    }
+
+    .confirm {
+      min-height: 48px;
+      margin-top: 0;
+    }
+  }
 </style>

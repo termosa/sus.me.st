@@ -58,3 +58,11 @@ export function stepKey(game: Game): string {
       return JSON.stringify([...at, step]);
   }
 }
+
+/** The cards still face down, numbered from 1 so the labels don't show which were taken (S-6). */
+export function cardsLeft(game: Game): { card: number; label: number }[] {
+  return game.setup.deck
+    .map((_, card) => card)
+    .filter((card) => !game.taken.includes(card))
+    .map((card, i) => ({ card, label: i + 1 }));
+}
