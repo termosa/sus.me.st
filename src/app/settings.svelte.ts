@@ -20,6 +20,8 @@ export interface Settings {
   nightMusic: boolean;
   /** The track that plays during nights; null for the first built-in one. */
   nightTrack: string | null;
+  /** Names the host gave tracks, by track id; the rest keep their own. */
+  trackNames: Record<string, string>;
   /** 0–1. */
   musicVolume: number;
 }
@@ -39,6 +41,12 @@ function initial(): Settings {
     hints: saved?.hints !== false,
     nightMusic: saved?.nightMusic !== false,
     nightTrack: typeof saved?.nightTrack === 'string' ? saved.nightTrack : null,
+    trackNames:
+      typeof saved?.trackNames === 'object' && saved.trackNames
+        ? Object.fromEntries(
+            Object.entries(saved.trackNames).filter(([, name]) => typeof name === 'string'),
+          )
+        : {},
     musicVolume:
       typeof saved?.musicVolume === 'number' && saved.musicVolume >= 0 && saved.musicVolume <= 1
         ? saved.musicVolume

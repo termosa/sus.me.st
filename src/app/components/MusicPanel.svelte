@@ -6,6 +6,20 @@
   import Icon from './Icon.svelte';
 
   let busy = $state(false);
+  /** The track whose name is being edited. */
+  let editing: string | null = $state(null);
+  let field: HTMLInputElement | undefined = $state();
+
+  function rename(id: string, input: HTMLInputElement) {
+    if (editing !== id) return;
+    editing = null;
+    music.rename(id, input.value);
+  }
+
+  function focus(input: HTMLInputElement) {
+    input.focus();
+    input.select();
+  }
 
   async function added(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
@@ -43,20 +57,58 @@
 
   {#each music.tracks as track (track.id)}
     <div class="row" class:own={!track.builtIn}>
-      <button
-        type="button"
-        class="track"
-        class:on={music.selected === track.id}
-        aria-pressed={music.selected === track.id}
-        onclick={() => music.select(track.id)}
-      >
-        <Icon name="music" />
-        <span>{track.name}</span>
-      </button>
+      {#if editing === track.id}
+        <input
+          class="track name"
+          aria-label="Track name"
+          value={track.name}
+          maxlength="40"
+          enterkeyhint="done"
+          bind:this={field}
+          {@attach focus}
+          onblur={(e) => rename(track.id, e.currentTarget)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') rename(track.id, e.currentTarget);
+            if (e.key === 'Escape') editing = null;
+          }}
+        />
+      {:else}
+        <button
+          type="button"
+          class="track"
+          class:on={music.selected === track.id}
+          aria-pressed={music.selected === track.id}
+          onclick={() => music.select(track.id)}
+        >
+          <Icon name="music" />
+          <span>{track.name}</span>
+        </button>
+      {/if}
+      {#if editing === track.id}
+        <!-- Keeps the focus in the field, so its blur doesn't save first. -->
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Save name"
+          onpointerdown={(e) => e.preventDefault()}
+          onclick={() => field && rename(track.id, field)}
+        >
+          <Icon name="check" />
+        </button>
+      {:else}
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Rename {track.name}"
+          onclick={() => (editing = track.id)}
+        >
+          <Icon name="edit" />
+        </button>
+      {/if}
       {#if !track.builtIn}
         <button
           type="button"
-          class="remove"
+          class="icon-button"
           aria-label="Delete {track.name}"
           onclick={() => music.remove(track.id)}
         >
@@ -98,11 +150,12 @@
 
   .row {
     display: grid;
+    grid-template-columns: 1fr var(--tap);
     gap: 8px;
   }
 
   .row.own {
-    grid-template-columns: 1fr var(--tap);
+    grid-template-columns: 1fr var(--tap) var(--tap);
   }
 
   .track {
@@ -141,7 +194,17 @@
     accent-color: var(--accent);
   }
 
-  .remove {
+  .name {
+    width: 100%;
+    min-height: var(--tap);
+    border-color: var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .icon-button {
     display: grid;
     place-items: center;
     background: none;

@@ -34,19 +34,26 @@ async function trackData(id: string): Promise<Blob | null> {
   }
 }
 
+/** The tracks with the names the host gave them. */
+function named(tracks: Track[]): Track[] {
+  return tracks.map((t) => ({ ...t, name: settings.trackNames[t.id] ?? t.name }));
+}
+
 /**
  * Music for the night: the chosen track fades in as night falls and out at morning.
  * The track is loaded ahead of time so it can start inside the tap that begins the night,
  * which iOS requires.
  */
 class NightMusic {
-  tracks: Track[] = $state([...BUILT_IN]);
+  tracks: Track[] = $state(named(BUILT_IN));
   /** Whether music is playing now, for the night controls. */
   playing = $state(false);
   #night = false;
   /** The host paused it; holds until they resume or the next night begins. */
   #paused = false;
   #loaded: string | null = null;
+  /** The tracks under their own names. */
+  #own: Track[] = BUILT_IN;
 
   constructor() {
     if (typeof indexedDB === 'undefined') return;
@@ -72,8 +79,19 @@ class NightMusic {
 
   async remove(id: string): Promise<void> {
     await removeTrack(id);
+    delete settings.trackNames[id];
     if (this.selected === id) this.select(null);
     await this.#refresh();
+  }
+
+  /** Gives a track a name; an empty one brings back its own. */
+  rename(id: string, name: string): void {
+    const own = this.#own.find((t) => t.id === id)?.name;
+    const trimmed = name.trim();
+    if (trimmed && trimmed !== own) settings.trackNames[id] = trimmed;
+    else delete settings.trackNames[id];
+    saveSettings();
+    this.tracks = named(this.#own);
   }
 
   /** Picks the track for the coming night; during a night it switches at once. */
@@ -151,7 +169,8 @@ class NightMusic {
     // Without storage (some private windows) only the built-in tracks are offered.
     const stored = await listTracks().catch(() => []);
     const added = stored.map((t) => ({ ...t, builtIn: false }));
-    this.tracks = [...BUILT_IN, ...added];
+    this.#own = [...BUILT_IN, ...added];
+    this.tracks = named(this.#own);
     if (!this.track) {
       settings.nightTrack = null;
       saveSettings();
