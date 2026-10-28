@@ -2,11 +2,19 @@ import { type Note, playNotes, unlockAudio } from '../platform/audio';
 import { hush, speak, unlockSpeech } from '../platform/speech';
 import { settings } from './settings.svelte';
 
+// Timer cues climb in pitch as time runs out, so each one says how much is left.
 const CUES = {
-  /** The timer is about to run out. */
-  warn: [{ hz: 880, at: 0, length: 0.15, gain: 0.4 }],
-  /** The timer ran out. */
-  end: [{ hz: 660, at: 0, length: 0.6, gain: 0.4 }],
+  /** Halfway: one low, soft bell. */
+  half: [{ hz: 440, at: 0, length: 0.5, gain: 0.35 }],
+  /** 10 s (or 5 s) left: two quick higher beeps. */
+  warn: [
+    { hz: 880, at: 0, length: 0.12, gain: 0.4 },
+    { hz: 880, at: 0.18, length: 0.12, gain: 0.4 },
+  ],
+  /** 2 s and 1 s left: a short high tick. */
+  tick: [{ hz: 1320, at: 0, length: 0.07, gain: 0.35 }],
+  /** Time is up: one long tone. */
+  end: [{ hz: 660, at: 0, length: 1, gain: 0.45 }],
   /** A falling pair as night begins. */
   night: [
     { hz: 523, at: 0, length: 0.35, gain: 0.4 },

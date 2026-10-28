@@ -1,5 +1,5 @@
 import { newGame, RuleError, reduce, replay } from '../engine/game';
-import type { PlayerCount } from '../engine/rules';
+import type { PlayerCount, Timings } from '../engine/rules';
 import { stepKey, stepSeconds } from '../engine/selectors';
 import { createSetup } from '../engine/setup';
 import type { Game, GameEvent, Setup, Step } from '../engine/types';
@@ -27,12 +27,20 @@ function loadTimer(): Timer | null {
   return t && typeof t.key === 'string' && typeof t.leftMs === 'number' ? t : null;
 }
 
-/** A new step gets a fresh, idle timer; the same step keeps its running one. */
+function untouched(timer: Timer): boolean {
+  return timer.endsAt === null && timer.leftMs === timer.totalMs;
+}
+
+/**
+ * A new step gets a fresh, idle timer; the same step keeps its own, unless it was never
+ * started and its length changed in settings.
+ */
 function timerFor(game: Game, current: Timer | null): Timer | null {
   const seconds = stepSeconds(game);
   if (!seconds) return null;
   const key = stepKey(game);
-  return current?.key === key ? current : newTimer(key, seconds * 1000);
+  const keep = current?.key === key && !(untouched(current) && current.totalMs !== seconds * 1000);
+  return keep ? current : newTimer(key, seconds * 1000);
 }
 
 /** The running game: an event log, the state replayed from it, and the step timer. */
@@ -106,14 +114,27 @@ class Session {
     this.#timer = t.endsAt === null ? startTimer(t, Date.now()) : pauseTimer(t, Date.now());
     this.timer = this.#timer;
     save(TIMER_KEY, this.#timer);
+    // A timed step is called out as its timer starts, not again on resume.
+    if (untouched(t) && this.#game) say(announcement(this.#game));
   };
 
-  /** Cues a change of phase and calls out a new step; the same step stays quiet. */
+  /** Applies new timings to the running game from its next timer on. */
+  retime = (timings: Timings): void => {
+    const setup = this.#setup;
+    if (!setup) return;
+    const next = { ...setup, timings: { ...timings } };
+    this.#commit(next, this.#events, replay(next, this.#events));
+  };
+
+  /**
+   * Cues a change of phase and calls out a new step; the same step stays quiet.
+   * A timed step is called out when its timer starts instead.
+   */
   #narrate(before: Game | null, after: Game): void {
     if (before && stepKey(before) === stepKey(after)) return;
     const phaseChange = before !== null && phaseChanged(before, after);
     if (phaseChange) cue(isNight(after.step) ? 'night' : 'day');
-    say(announcement(after), phaseChange ? 900 : 0);
+    say(this.#timer ? null : announcement(after), phaseChange ? 900 : 0);
   }
 
   #commit(setup: Setup, events: GameEvent[], game: Game, animate = false): void {

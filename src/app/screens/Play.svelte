@@ -10,6 +10,7 @@
   import { ROLE_ICON } from '../components/RoleArt.svelte';
   import SeatGrid from '../components/SeatGrid.svelte';
   import SeatSheet from '../components/SeatSheet.svelte';
+  import SettingsPanel from '../components/SettingsPanel.svelte';
   import Sheet from '../components/Sheet.svelte';
   import TimerRing from '../components/TimerRing.svelte';
   import VotePanel from '../components/VotePanel.svelte';
@@ -251,6 +252,8 @@
 
 {#if menuOpen}
   <Sheet onclose={() => (menuOpen = false)}>
+    <SettingsPanel />
+    <hr />
     <div class="menu">
       {#each ['red', 'black'] as const as team (team)}
         <HoldButton
@@ -481,6 +484,13 @@
     .actions button {
       min-height: 52px;
     }
+  }
+
+  hr {
+    width: 100%;
+    margin: 4px 0;
+    border: 0;
+    border-top: 1px solid var(--surface-2);
   }
 
   .menu {

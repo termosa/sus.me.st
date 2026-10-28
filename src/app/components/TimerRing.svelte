@@ -3,6 +3,7 @@
   import { vibrate } from '../../platform/haptics';
   import { remaining, type Timer } from '../../platform/timer';
   import { cue } from '../cues';
+  import { type TimerCue, timerMarks } from '../timer-cues';
   import Icon from './Icon.svelte';
 
   let { timer, ontoggle }: { timer: Timer; ontoggle: () => void } = $props();
@@ -13,8 +14,8 @@
   let now = $state(Date.now());
   const left = $derived(remaining(timer, now));
   const running = $derived(timer.endsAt !== null && left > 0);
-  // B-4 calls "5 seconds" on the 20 s best move; longer timers warn at 10 s.
-  const warnMs = $derived(timer.totalMs > 20_000 ? 10_000 : 5_000);
+  const marks = $derived(timerMarks(timer.totalMs));
+  const warnMs = $derived(marks.find((m) => m.cue === 'warn')?.leftMs ?? 0);
   const seconds = $derived(Math.ceil(left / 1000));
 
   // Read every start or pause against the current time, not the one from the last tick;
@@ -39,18 +40,23 @@
     };
   });
 
+  const BUZZ: Record<TimerCue, number | number[]> = {
+    half: 60,
+    warn: [80, 80, 80],
+    tick: 30,
+    end: [250, 120, 250],
+  };
+
   // Cues fire when the countdown crosses a mark, never on mount or after a reload.
   // The parent keys this component by step, so the starting value is captured once.
   let previous = untrack(() => remaining(timer, Date.now()));
   $effect(() => {
     const current = left;
-    if (previous > warnMs && current <= warnMs && current > 0) {
-      cue('warn');
-      vibrate(120);
-    }
-    if (previous > 0 && current === 0) {
-      cue('end');
-      vibrate([250, 120, 250]);
+    // After a pause in the background, only the latest mark passed is played.
+    const crossed = marks.filter((m) => previous > m.leftMs && current <= m.leftMs).at(-1);
+    if (crossed) {
+      cue(crossed.cue);
+      vibrate(BUZZ[crossed.cue]);
     }
     previous = current;
   });

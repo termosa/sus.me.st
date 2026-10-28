@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { Timings } from '../../engine/rules';
-  import Icon, { type IconName } from '../components/Icon.svelte';
-  import Sheet from '../components/Sheet.svelte';
   import { say } from '../cues';
+  import { session } from '../game.svelte';
   import {
     CONFIGURABLE,
     resetTimings,
@@ -10,8 +9,7 @@
     saveSettings,
     settings,
   } from '../settings.svelte';
-
-  let { onclose }: { onclose: () => void } = $props();
+  import Icon, { type IconName } from './Icon.svelte';
 
   const ROWS: Record<(typeof CONFIGURABLE)[number], { icon: IconName; label: string }> = {
     night0FreeSitting: { icon: 'moon', label: 'Free' },
@@ -34,13 +32,30 @@
     if (!settings.voice) say(null);
   }
 
+  // Night timers apply to a game in progress too, from its next timer on.
   function step(key: keyof Timings, by: number) {
     settings.timings[key] = Math.max(5, settings.timings[key] + by);
     saveSettings();
+    session.retime(settings.timings);
+  }
+
+  function reset() {
+    resetTimings();
+    session.retime(settings.timings);
   }
 </script>
 
-<Sheet {onclose}>
+<div class="settings">
+  {#each TOGGLES as t (t.key)}
+    <label class="row toggle">
+      <Icon name={t.icon} />
+      <span class="label">{t.label}</span>
+      <input type="checkbox" bind:checked={settings[t.key]} onchange={toggled} />
+    </label>
+  {/each}
+
+
+
   {#each CONFIGURABLE as key (key)}
     {@const row = ROWS[key]}
     <div class="row">
@@ -56,20 +71,17 @@
     </div>
   {/each}
 
-  {#each TOGGLES as t (t.key)}
-    <label class="row toggle">
-      <Icon name={t.icon} />
-      <span class="label">{t.label}</span>
-      <input type="checkbox" bind:checked={settings[t.key]} onchange={toggled} />
-    </label>
-  {/each}
-
-  <button type="button" class="reset" aria-label="Default timings" onclick={resetTimings}>
+  <button type="button" class="reset" aria-label="Default timings" onclick={reset}>
     <Icon name="restart" />
   </button>
-</Sheet>
+</div>
 
 <style>
+  .settings {
+    display: grid;
+    gap: var(--gap);
+  }
+
   .row {
     display: grid;
     grid-template-columns: 24px 1fr var(--tap) 3ch var(--tap);

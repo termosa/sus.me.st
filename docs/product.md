@@ -38,6 +38,14 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 
 - Night timers (checks, free sitting) are configurable; FIIM values by default.
 - "Play cues in silent mode" (iOS), off by default because it pauses other audio.
+- Sounds, Voice and Hints switches, all on by default.
+- Settings open from the start screen and from the in-game menu. Night timer changes apply to the running game from its next timer on; a timer not yet started takes the new length at once.
+
+## Sound and voice
+
+- The voice calls each step: a timed step when its timer starts, any other step as it begins.
+- Timer cues rise in pitch as time runs out: a low bell at halfway, two beeps at 10 s left (5 s on timers under 50 s), a tick at 2 s and 1 s, and a long tone at the end.
+- A falling chime starts the night, a rising one the day.
 
 ## Deferred to later versions
 

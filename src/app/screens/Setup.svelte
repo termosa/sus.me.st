@@ -5,9 +5,10 @@
   import { keepAwake } from '../../platform/wakelock';
   import Hint from '../components/Hint.svelte';
   import Icon from '../components/Icon.svelte';
+  import SettingsPanel from '../components/SettingsPanel.svelte';
+  import Sheet from '../components/Sheet.svelte';
   import UpdateButton from '../components/UpdateButton.svelte';
   import { session } from '../game.svelte';
-  import Settings from './Settings.svelte';
 
   let settingsOpen = $state(false);
 
@@ -48,7 +49,9 @@
 </main>
 
 {#if settingsOpen}
-  <Settings onclose={() => (settingsOpen = false)} />
+  <Sheet onclose={() => (settingsOpen = false)}>
+    <SettingsPanel />
+  </Sheet>
 {/if}
 
 <style>
