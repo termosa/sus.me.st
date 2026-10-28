@@ -2,6 +2,7 @@
   color-scheme: dark;
 
   --bg: #0b0b10;
+  --night: #06060f;
   --surface: #17171f;
   --surface-2: #22222d;
   --text: #ececf1;
@@ -9,6 +10,8 @@
   --red: #e5484d;
   --black: #3a3a48;
   --accent: #f5c542;
+  --warn: #f5c542;
+  --card-back: repeating-linear-gradient(45deg, #1b1b25 0 10px, #20202c 10px 20px);
 
   --radius: 16px;
   --gap: 12px;

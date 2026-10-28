@@ -1,31 +1,24 @@
 <script lang="ts">
-  import { PLAYER_COUNTS } from '../engine/rules';
+  import { keepAwake } from '../platform/wakelock';
+  import { session } from './game.svelte';
+  import Deal from './screens/Deal.svelte';
+  import Finished from './screens/Finished.svelte';
+  import Play from './screens/Play.svelte';
+  import Setup from './screens/Setup.svelte';
+
+  const game = $derived(session.game);
+
+  $effect(() => {
+    keepAwake(game !== null && game.step.kind !== 'over');
+  });
 </script>
 
-<main>
-  <div class="counts">
-    {#each PLAYER_COUNTS as count (count)}
-      <button type="button">{count}</button>
-    {/each}
-  </div>
-</main>
-
-<style>
-  main {
-    display: grid;
-    place-items: center;
-    height: 100%;
-  }
-
-  .counts {
-    display: flex;
-    gap: var(--gap);
-  }
-
-  .counts button {
-    width: 96px;
-    height: 96px;
-    font-size: 40px;
-    font-weight: 700;
-  }
-</style>
+{#if !game}
+  <Setup />
+{:else if game.step.kind === 'deal'}
+  <Deal {game} />
+{:else if game.step.kind === 'over'}
+  <Finished {game} />
+{:else}
+  <Play {game} />
+{/if}

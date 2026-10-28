@@ -1,6 +1,7 @@
 // Rule constants. IDs in comments refer to docs/rules.md.
 
-export type Role = 'citizen' | 'sheriff' | 'mafia' | 'don';
+export const ROLES = ['citizen', 'sheriff', 'mafia', 'don'] as const;
+export type Role = (typeof ROLES)[number];
 export type Team = 'red' | 'black';
 
 export const PLAYER_COUNTS = [9, 10] as const;
@@ -39,8 +40,16 @@ export const DEFAULT_TIMINGS = {
   bestMove: 20,
 } as const;
 
-export type Timings = { [K in keyof typeof DEFAULT_TIMINGS]: number };
+export type Timings = { -readonly [K in keyof typeof DEFAULT_TIMINGS]: number };
 
 // F-3, F-5
+/** B-4: the best move names up to three seats. */
+export const BEST_MOVE_PICKS = 3;
+
+/** T-5: a raise vote passes with more than half of the players in the game. */
+export function raisePasses(yes: number, alive: number): boolean {
+  return yes > alive / 2;
+}
+
 export const FOULS_TO_SILENCE = 3;
 export const FOULS_TO_REMOVE = 4;
