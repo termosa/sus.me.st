@@ -1,0 +1,18 @@
+:root {
+  color-scheme: dark;
+
+  --bg: #0b0b10;
+  --surface: #17171f;
+  --surface-2: #22222d;
+  --text: #ececf1;
+  --text-dim: #8b8b99;
+  --red: #e5484d;
+  --black: #3a3a48;
+  --accent: #f5c542;
+
+  --radius: 16px;
+  --gap: 12px;
+  --tap: 56px;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

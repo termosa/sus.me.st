@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Mafia host</title>
+  <rect width="512" height="512" rx="96" fill="#0b0b10"/>
+  <path d="M96 232c0-26 20-40 52-40h216c32 0 52 14 52 40 0 18-10 26-30 30-44 8-62 52-110 52s-66-44-110-52c-20-4-30-12-30-30z" fill="#e5484d"/>
+  <circle cx="188" cy="238" r="18" fill="#0b0b10"/>
+  <circle cx="324" cy="238" r="18" fill="#0b0b10"/>
+</svg>

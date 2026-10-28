@@ -1,0 +1,13 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["vite/client", "vite-plugin-pwa/svelte"],
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "pwa-assets.config.ts"]
+}
