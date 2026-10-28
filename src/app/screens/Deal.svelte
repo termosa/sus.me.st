@@ -70,9 +70,16 @@
 
 <main>
   <header>
-    <HoldButton label="Undo" tone="plain" onconfirm={session.undo}>
-      <Icon name="undo" />
-    </HoldButton>
+    {#if game.taken.length === 0}
+      <!-- Nothing picked yet, so going back to the player count loses nothing. -->
+      <button type="button" class="back" aria-label="Back" onclick={session.quit}>
+        <Icon name="back" />
+      </button>
+    {:else}
+      <HoldButton label="Undo" tone="plain" onconfirm={session.undo}>
+        <Icon name="undo" />
+      </HoldButton>
+    {/if}
     <div class="who" role="img" aria-label="Seat {seat} picks">
       <Icon name="person" size={28} />
       <span>{seat}</span>
@@ -143,9 +150,15 @@
     align-items: center;
   }
 
-  header :global(.hold) {
+  header :global(.hold),
+  .back {
     color: var(--text-dim);
     background: none;
+  }
+
+  .back {
+    display: grid;
+    place-items: center;
   }
 
   .who {
