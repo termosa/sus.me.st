@@ -1,6 +1,35 @@
 import * as player from '../platform/music';
-import { addTrack, listTracks, loadTrack, removeTrack, type TrackInfo } from '../platform/tracks';
+import { addTrack, listTracks, loadTrack, removeTrack } from '../platform/tracks';
 import { saveSettings, settings } from './settings.svelte';
+
+export interface Track {
+  id: string;
+  name: string;
+  /** Shipped with the app (public/music, CC0); can't be deleted. */
+  builtIn: boolean;
+}
+
+const BUILT_IN: Track[] = [
+  { id: 'builtin:rain', name: 'Rain', builtIn: true },
+  { id: 'builtin:calm', name: 'Calm', builtIn: true },
+  { id: 'builtin:tension', name: 'Tension', builtIn: true },
+];
+
+const DEFAULT_TRACK = 'builtin:rain';
+
+/**
+ * Built-in tracks are fetched into a blob rather than streamed: the service worker
+ * serves them from its cache, which can't answer the range requests Safari makes.
+ */
+async function trackData(id: string): Promise<Blob | null> {
+  if (!id.startsWith('builtin:')) return loadTrack(id);
+  try {
+    const response = await fetch(`music/${id.slice('builtin:'.length)}.mp3`);
+    return response.ok ? await response.blob() : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Music for the night: the chosen track fades in as night falls and out at morning.
@@ -8,7 +37,7 @@ import { saveSettings, settings } from './settings.svelte';
  * which iOS requires.
  */
 class NightMusic {
-  tracks: TrackInfo[] = $state([]);
+  tracks: Track[] = $state([...BUILT_IN]);
   /** Whether music is playing now, for the night controls. */
   playing = $state(false);
   #night = false;
@@ -21,27 +50,26 @@ class NightMusic {
     void this.#refresh().then(() => this.#prepare());
   }
 
-  get selected(): string | null {
-    return settings.nightTrack;
+  /** The chosen track, or the first built-in one. */
+  get selected(): string {
+    return settings.nightTrack ?? DEFAULT_TRACK;
   }
 
-  get track(): TrackInfo | undefined {
-    return this.tracks.find((t) => t.id === settings.nightTrack);
+  get track(): Track | undefined {
+    return this.tracks.find((t) => t.id === this.selected);
   }
 
+  /** Adds files and picks the first of them. */
   async add(files: FileList | File[]): Promise<void> {
-    for (const file of files) {
-      const track = await addTrack(file);
-      settings.nightTrack ??= track.id;
-    }
-    saveSettings();
+    let first: string | null = null;
+    for (const file of files) first ??= (await addTrack(file)).id;
     await this.#refresh();
-    await this.#prepare();
+    if (first) this.select(first);
   }
 
   async remove(id: string): Promise<void> {
     await removeTrack(id);
-    if (settings.nightTrack === id) this.select(null);
+    if (this.selected === id) this.select(null);
     await this.#refresh();
   }
 
@@ -49,24 +77,18 @@ class NightMusic {
   select(id: string | null): void {
     settings.nightTrack = id;
     saveSettings();
-    if (id === null) this.#stop();
     void this.#prepare().then(() => this.#sync());
   }
 
   /** The next or previous track, wrapping around the list. */
   skip(by: 1 | -1): void {
-    if (this.tracks.length === 0) return;
-    const at = this.tracks.findIndex((t) => t.id === settings.nightTrack);
+    const at = this.tracks.findIndex((t) => t.id === this.selected);
     const next = this.tracks[(at + by + this.tracks.length) % this.tracks.length];
     this.#paused = false;
     if (next) this.select(next.id);
   }
 
   toggle(): void {
-    if (!this.track) {
-      this.skip(1);
-      return;
-    }
     this.#paused = this.playing;
     if (this.#paused) this.#stop(0.3);
     else this.#sync();
@@ -123,19 +145,24 @@ class NightMusic {
   }
 
   async #refresh(): Promise<void> {
-    this.tracks = await listTracks();
-    if (settings.nightTrack && !this.tracks.some((t) => t.id === settings.nightTrack)) {
+    // Without storage (some private windows) only the built-in tracks are offered.
+    const stored = await listTracks().catch(() => []);
+    const added = stored.map((t) => ({ ...t, builtIn: false }));
+    this.tracks = [...BUILT_IN, ...added];
+    if (!this.track) {
       settings.nightTrack = null;
       saveSettings();
     }
   }
 
   async #prepare(): Promise<void> {
-    const id = settings.nightTrack;
+    const id = this.selected;
     if (id === this.#loaded) return;
     this.#loaded = id;
     player.setLevel(settings.musicVolume);
-    player.load(id ? await loadTrack(id) : null);
+    const data = await trackData(id);
+    // Another track may have been picked while this one was loading.
+    if (this.#loaded === id) player.load(data);
   }
 }
 

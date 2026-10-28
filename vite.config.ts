@@ -22,7 +22,10 @@ export default defineConfig({
         theme_color: '#0b0b10',
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        // The built-in night music is precached too, so it plays offline. No webmanifest:
+        // the plugin adds it itself, and a second entry makes Workbox cache nothing.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,mp3}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
     }),

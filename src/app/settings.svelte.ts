@@ -18,7 +18,7 @@ export interface Settings {
   hints: boolean;
   /** Music during nights at all. */
   nightMusic: boolean;
-  /** The track that plays during nights; null for silence. */
+  /** The track that plays during nights; null for the first built-in one. */
   nightTrack: string | null;
   /** 0–1. */
   musicVolume: number;

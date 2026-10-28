@@ -1,7 +1,7 @@
 <script lang="ts">
   import { cue } from '../cues';
   import { music } from '../music.svelte';
-  import { settings } from '../settings.svelte';
+  import { saveSettings, settings } from '../settings.svelte';
   import Hint from './Hint.svelte';
   import Icon from './Icon.svelte';
 
@@ -26,18 +26,20 @@
 </script>
 
 <div class="music">
-  <Hint text="Plays during the night. Pick the track before night falls." />
+  <Hint text="Plays during the night to cover table noise. Pick the track before night falls." />
 
-  <button
-    type="button"
-    class="track"
-    class:on={music.selected === null}
-    aria-pressed={music.selected === null}
-    onclick={() => music.select(null)}
-  >
-    <Icon name="close" />
-    <span>No music</span>
-  </button>
+  <label class="switch">
+    <Icon name="music" />
+    <span>Night music</span>
+    <input
+      type="checkbox"
+      bind:checked={settings.nightMusic}
+      onchange={() => {
+        saveSettings();
+        music.sync();
+      }}
+    />
+  </label>
 
   {#each music.tracks as track (track.id)}
     <div class="row">
@@ -51,14 +53,16 @@
         <Icon name="music" />
         <span>{track.name}</span>
       </button>
-      <button
-        type="button"
-        class="remove"
-        aria-label="Delete {track.name}"
-        onclick={() => music.remove(track.id)}
-      >
-        <Icon name="remove" />
-      </button>
+      {#if !track.builtIn}
+        <button
+          type="button"
+          class="remove"
+          aria-label="Delete {track.name}"
+          onclick={() => music.remove(track.id)}
+        >
+          <Icon name="remove" />
+        </button>
+      {/if}
     </div>
   {/each}
 
@@ -117,6 +121,21 @@
   .track.on {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .switch {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    min-height: var(--tap);
+    color: var(--text-dim);
+  }
+
+  .switch input {
+    width: 28px;
+    height: 28px;
+    accent-color: var(--accent);
   }
 
   .remove {
