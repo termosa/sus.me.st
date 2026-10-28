@@ -42,7 +42,7 @@
   </label>
 
   {#each music.tracks as track (track.id)}
-    <div class="row">
+    <div class="row" class:own={!track.builtIn}>
       <button
         type="button"
         class="track"
@@ -98,8 +98,11 @@
 
   .row {
     display: grid;
-    grid-template-columns: 1fr var(--tap);
     gap: 8px;
+  }
+
+  .row.own {
+    grid-template-columns: 1fr var(--tap);
   }
 
   .track {

@@ -49,7 +49,7 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 
 ## Night music
 
-- Three free (CC0) tracks come with the app and work offline: Rain (the default), Calm and Tension. Sources are in `public/music/CREDITS.md`.
+- Six free (CC0) tracks come with the app and work offline: Noir jazz (the default), Funk, Lo-fi, Synthwave, Dark synth and Rain. They are steady and dense, without quiet passages, so they cover table noise; all loop without a gap in loudness. Sources are in `public/music/CREDITS.md`.
 - The host adds their own audio files (stored on the device in IndexedDB, so they work offline) from the music button on the start screen or in the game header. Only added files can be deleted.
 - One track is chosen at a time. It loops through each night, fading in as night falls and out at morning; the choice can change before or during any night.
 - The voice lowers the music while it speaks.

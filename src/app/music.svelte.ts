@@ -10,12 +10,15 @@ export interface Track {
 }
 
 const BUILT_IN: Track[] = [
+  { id: 'builtin:jazz', name: 'Noir jazz', builtIn: true },
+  { id: 'builtin:funk', name: 'Funk', builtIn: true },
+  { id: 'builtin:lofi', name: 'Lo-fi', builtIn: true },
+  { id: 'builtin:synthwave', name: 'Synthwave', builtIn: true },
+  { id: 'builtin:dark', name: 'Dark synth', builtIn: true },
   { id: 'builtin:rain', name: 'Rain', builtIn: true },
-  { id: 'builtin:calm', name: 'Calm', builtIn: true },
-  { id: 'builtin:tension', name: 'Tension', builtIn: true },
 ];
 
-const DEFAULT_TRACK = 'builtin:rain';
+const DEFAULT_TRACK = 'builtin:jazz';
 
 /**
  * Built-in tracks are fetched into a blob rather than streamed: the service worker
