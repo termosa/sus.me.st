@@ -9,7 +9,11 @@ import { saveSettings, settings } from './settings.svelte';
  */
 class NightMusic {
   tracks: TrackInfo[] = $state([]);
+  /** Whether music is playing now, for the night controls. */
+  playing = $state(false);
   #night = false;
+  /** The host paused it; holds until they resume or the next night begins. */
+  #paused = false;
   #loaded: string | null = null;
 
   constructor() {
@@ -19,6 +23,10 @@ class NightMusic {
 
   get selected(): string | null {
     return settings.nightTrack;
+  }
+
+  get track(): TrackInfo | undefined {
+    return this.tracks.find((t) => t.id === settings.nightTrack);
   }
 
   async add(files: FileList | File[]): Promise<void> {
@@ -41,9 +49,27 @@ class NightMusic {
   select(id: string | null): void {
     settings.nightTrack = id;
     saveSettings();
-    void this.#prepare().then(() => {
-      if (this.#night) void player.play();
-    });
+    if (id === null) this.#stop();
+    void this.#prepare().then(() => this.#sync());
+  }
+
+  /** The next or previous track, wrapping around the list. */
+  skip(by: 1 | -1): void {
+    if (this.tracks.length === 0) return;
+    const at = this.tracks.findIndex((t) => t.id === settings.nightTrack);
+    const next = this.tracks[(at + by + this.tracks.length) % this.tracks.length];
+    this.#paused = false;
+    if (next) this.select(next.id);
+  }
+
+  toggle(): void {
+    if (!this.track) {
+      this.skip(1);
+      return;
+    }
+    this.#paused = this.playing;
+    if (this.#paused) this.#stop(0.3);
+    else this.#sync();
   }
 
   setVolume(value: number): void {
@@ -56,17 +82,44 @@ class NightMusic {
   setNight(on: boolean): void {
     if (on === this.#night) return;
     this.#night = on;
-    if (on) void player.play();
-    else player.fadeOut();
+    this.#paused = false;
+    if (on) this.#sync();
+    else this.#stop();
   }
 
-  /** On a tap: starts the music if a reload at night left it waiting for a gesture. */
+  /** On a tap: starts music a reload at night left waiting for a gesture. */
   resume(): void {
-    if (this.#night && !player.isPlaying()) void player.play();
+    if (!this.playing) this.#sync();
+  }
+
+  /** After the Night music setting changed. */
+  sync(): void {
+    this.#sync();
   }
 
   duck(on: boolean): void {
     player.duck(on);
+  }
+
+  #wanted(): boolean {
+    return this.#night && !this.#paused && settings.nightMusic;
+  }
+
+  #sync(): void {
+    if (!this.#wanted()) {
+      this.#stop();
+      return;
+    }
+    // Also when already playing: it cancels a fade-out still in progress.
+    void player.play().then((ok) => {
+      // A pause may have come in while playback was starting.
+      this.playing = ok && this.#wanted();
+    });
+  }
+
+  #stop(seconds?: number): void {
+    player.fadeOut(seconds);
+    this.playing = false;
   }
 
   async #refresh(): Promise<void> {

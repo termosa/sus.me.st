@@ -8,6 +8,7 @@
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
   import MusicPanel from '../components/MusicPanel.svelte';
+  import NightMusicBar from '../components/NightMusicBar.svelte';
   import { ROLE_ICON } from '../components/RoleArt.svelte';
   import SeatGrid from '../components/SeatGrid.svelte';
   import SeatSheet from '../components/SeatSheet.svelte';
@@ -16,7 +17,9 @@
   import TimerRing from '../components/TimerRing.svelte';
   import VotePanel from '../components/VotePanel.svelte';
   import { session } from '../game.svelte';
+  import { music } from '../music.svelte';
   import { hint } from '../narration';
+  import { settings } from '../settings.svelte';
 
   let { game }: { game: Game } = $props();
 
@@ -116,6 +119,9 @@
     <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
       <Icon name="menu" />
     </button>
+    {#if night && settings.nightMusic && music.tracks.length > 0}
+      <div class="music-bar"><NightMusicBar /></div>
+    {/if}
   </header>
 
   {#key key}
@@ -305,6 +311,13 @@
     grid-template-columns: var(--tap) 1fr var(--tap) var(--tap) var(--tap);
     align-items: center;
     view-transition-name: header;
+  }
+
+  .music-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
   }
 
   .icon {

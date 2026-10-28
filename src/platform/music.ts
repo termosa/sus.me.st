@@ -25,6 +25,10 @@ function player(): HTMLAudioElement {
   return element;
 }
 
+function isPlaying(): boolean {
+  return !!element && !element.paused;
+}
+
 function target(): number {
   return ducked ? level * DUCKED : level;
 }
@@ -64,15 +68,11 @@ export async function play(): Promise<boolean> {
   return true;
 }
 
-export function fadeOut(): void {
+export function fadeOut(seconds = FADE_S): void {
   if (!element || element.paused) return;
-  rampTo(0, FADE_S);
+  rampTo(0, seconds);
   clearTimeout(stopTimer);
-  stopTimer = setTimeout(() => element?.pause(), FADE_S * 1000);
-}
-
-export function isPlaying(): boolean {
-  return !!element && !element.paused;
+  stopTimer = setTimeout(() => element?.pause(), seconds * 1000);
 }
 
 export function setLevel(value: number): void {

@@ -2,6 +2,7 @@
   import type { Timings } from '../../engine/rules';
   import { say } from '../cues';
   import { session } from '../game.svelte';
+  import { music } from '../music.svelte';
   import {
     CONFIGURABLE,
     resetTimings,
@@ -23,6 +24,7 @@
     { key: 'sounds', icon: 'volume', label: 'Sounds' },
     { key: 'voice', icon: 'mic', label: 'Voice' },
     { key: 'hints', icon: 'info', label: 'Hints' },
+    { key: 'nightMusic', icon: 'music', label: 'Night music' },
     { key: 'cuesInSilentMode', icon: 'bell', label: 'Cues in silent mode' },
   ];
 
@@ -30,6 +32,7 @@
     saveSettings();
     // Turning the voice off also stops what it is saying.
     if (!settings.voice) say(null);
+    music.sync();
   }
 
   // Night timers apply to a game in progress too, from its next timer on.

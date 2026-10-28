@@ -16,6 +16,8 @@ export interface Settings {
   voice: boolean;
   /** A line of text explaining the current step, for first-time hosts. */
   hints: boolean;
+  /** Music during nights at all. */
+  nightMusic: boolean;
   /** The track that plays during nights; null for silence. */
   nightTrack: string | null;
   /** 0–1. */
@@ -35,6 +37,7 @@ function initial(): Settings {
     sounds: saved?.sounds !== false,
     voice: saved?.voice !== false,
     hints: saved?.hints !== false,
+    nightMusic: saved?.nightMusic !== false,
     nightTrack: typeof saved?.nightTrack === 'string' ? saved.nightTrack : null,
     musicVolume:
       typeof saved?.musicVolume === 'number' && saved.musicVolume >= 0 && saved.musicVolume <= 1

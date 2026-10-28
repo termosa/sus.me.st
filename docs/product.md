@@ -52,10 +52,12 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 - The host adds audio files (stored on the device in IndexedDB, so they work offline) from the music button on the start screen or in the game header.
 - One track is chosen at a time, or none. It loops through each night, fading in as night falls and out at morning; the choice can change before or during any night.
 - The voice lowers the music while it speaks.
+- During nights a bar under the header has previous track, play/pause and next track. A pause holds until resumed or the next night.
+- A "Night music" setting turns it off altogether.
 
 ## Voting
 
-- Each candidate's count is one tap on a row of numbers (0 to the players in the game). Counts that would take the total past the table are greyed out; the last candidate gets the rest (V-7).
+- A scoreboard shows one tile per candidate with their count; a 0–10 keypad (with ✓ as its 12th key) enters the count for the highlighted tile and moves on to the next, in nomination order. Tapping a tile edits it again. Counts that would take the total past the table are greyed out; the last candidate gets the rest (V-7). The raise vote uses the same keypad.
 
 ## Deferred to later versions
 
