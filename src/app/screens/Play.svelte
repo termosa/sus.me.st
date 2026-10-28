@@ -119,7 +119,7 @@
     <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
       <Icon name="menu" />
     </button>
-    {#if night && settings.nightMusic && music.tracks.length > 0}
+    {#if night && settings.nightMusic && music.playlist.length > 0}
       <div class="music-bar"><NightMusicBar /></div>
     {/if}
   </header>

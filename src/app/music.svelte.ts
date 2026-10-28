@@ -1,15 +1,17 @@
 import * as player from '../platform/music';
 import { addTrack, listTracks, loadTrack, removeTrack } from '../platform/tracks';
+import { arrange, moveTrack } from './playlist';
 import { saveSettings, settings } from './settings.svelte';
 
 export interface Track {
   id: string;
   name: string;
-  /** Shipped with the app (public/music, CC0); can't be deleted. */
+  /** Shipped with the app (public/music, CC0); can be hidden but not deleted. */
   builtIn: boolean;
+  hidden: boolean;
 }
 
-const BUILT_IN: Track[] = [
+const BUILT_IN: Omit<Track, 'hidden'>[] = [
   { id: 'builtin:jazz', name: 'Noir jazz', builtIn: true },
   { id: 'builtin:funk', name: 'Funk', builtIn: true },
   { id: 'builtin:lofi', name: 'Lo-fi', builtIn: true },
@@ -21,8 +23,6 @@ const BUILT_IN: Track[] = [
   { id: 'builtin:dark', name: 'Dark synth', builtIn: true },
   { id: 'builtin:rain', name: 'Rain', builtIn: true },
 ];
-
-const DEFAULT_TRACK = 'builtin:jazz';
 
 /**
  * Built-in tracks are fetched into a blob rather than streamed: the service worker
@@ -38,9 +38,13 @@ async function trackData(id: string): Promise<Blob | null> {
   }
 }
 
-/** The tracks with the names the host gave them. */
-function named(tracks: Track[]): Track[] {
-  return tracks.map((t) => ({ ...t, name: settings.trackNames[t.id] ?? t.name }));
+/** The tracks as the host arranged them: their names, order and hidden ones. */
+function arranged(tracks: Omit<Track, 'hidden'>[]): Track[] {
+  return arrange(tracks, settings.trackOrder).map((t) => ({
+    ...t,
+    name: settings.trackNames[t.id] ?? t.name,
+    hidden: settings.hiddenTracks.includes(t.id),
+  }));
 }
 
 /**
@@ -49,28 +53,35 @@ function named(tracks: Track[]): Track[] {
  * which iOS requires.
  */
 class NightMusic {
-  tracks: Track[] = $state(named(BUILT_IN));
+  /** Every track, hidden ones included, in the host's order. */
+  tracks: Track[] = $state(arranged(BUILT_IN));
   /** Whether music is playing now, for the night controls. */
   playing = $state(false);
   #night = false;
   /** The host paused it; holds until they resume or the next night begins. */
   #paused = false;
   #loaded: string | null = null;
-  /** The tracks under their own names. */
-  #own: Track[] = BUILT_IN;
+  /** The tracks under their own names, in their default order. */
+  #own: Omit<Track, 'hidden'>[] = BUILT_IN;
 
   constructor() {
     if (typeof indexedDB === 'undefined') return;
     void this.#refresh().then(() => this.#prepare());
   }
 
-  /** The chosen track, or the first built-in one. */
-  get selected(): string {
-    return settings.nightTrack ?? DEFAULT_TRACK;
+  /** The tracks the host can pick and skip through. */
+  get playlist(): Track[] {
+    return this.tracks.filter((t) => !t.hidden);
+  }
+
+  /** The chosen track, or the first one; null when every track is hidden. */
+  get selected(): string | null {
+    const list = this.playlist;
+    return (list.find((t) => t.id === settings.nightTrack) ?? list[0])?.id ?? null;
   }
 
   get track(): Track | undefined {
-    return this.tracks.find((t) => t.id === this.selected);
+    return this.playlist.find((t) => t.id === this.selected);
   }
 
   /** Adds files and picks the first of them. */
@@ -84,8 +95,33 @@ class NightMusic {
   async remove(id: string): Promise<void> {
     await removeTrack(id);
     delete settings.trackNames[id];
+    settings.trackOrder = settings.trackOrder.filter((t) => t !== id);
     if (this.selected === id) this.select(null);
     await this.#refresh();
+  }
+
+  /** Hides a built-in track from the list and from skipping; {@link show} brings it back. */
+  hide(id: string): void {
+    if (settings.nightTrack === id) settings.nightTrack = null;
+    settings.hiddenTracks = [...settings.hiddenTracks, id];
+    this.#arrange();
+  }
+
+  show(id: string): void {
+    settings.hiddenTracks = settings.hiddenTracks.filter((t) => t !== id);
+    this.#arrange();
+  }
+
+  /** Moves a track to position `to` in the playlist. */
+  move(id: string, to: number): void {
+    const all = this.tracks.map((t) => t.id);
+    settings.trackOrder = moveTrack(
+      all,
+      this.playlist.map((t) => t.id),
+      id,
+      to,
+    );
+    this.#arrange();
   }
 
   /** Gives a track a name; an empty one brings back its own. */
@@ -94,8 +130,7 @@ class NightMusic {
     const trimmed = name.trim();
     if (trimmed && trimmed !== own) settings.trackNames[id] = trimmed;
     else delete settings.trackNames[id];
-    saveSettings();
-    this.tracks = named(this.#own);
+    this.#arrange();
   }
 
   /** Picks the track for the coming night; during a night it switches at once. */
@@ -105,10 +140,11 @@ class NightMusic {
     void this.#prepare().then(() => this.#sync());
   }
 
-  /** The next or previous track, wrapping around the list. */
+  /** The next or previous track, wrapping around the playlist. */
   skip(by: 1 | -1): void {
-    const at = this.tracks.findIndex((t) => t.id === this.selected);
-    const next = this.tracks[(at + by + this.tracks.length) % this.tracks.length];
+    const list = this.playlist;
+    const at = list.findIndex((t) => t.id === this.selected);
+    const next = list[(at + by + list.length) % list.length];
     this.#paused = false;
     if (next) this.select(next.id);
   }
@@ -174,11 +210,21 @@ class NightMusic {
     const stored = await listTracks().catch(() => []);
     const added = stored.map((t) => ({ ...t, builtIn: false }));
     this.#own = [...BUILT_IN, ...added];
-    this.tracks = named(this.#own);
-    if (!this.track) {
+    this.tracks = arranged(this.#own);
+    if (settings.nightTrack !== null && !this.tracks.some((t) => t.id === settings.nightTrack)) {
       settings.nightTrack = null;
       saveSettings();
     }
+  }
+
+  /**
+   * Saves the host's names, order and hidden tracks, and shows them. Hiding or moving can
+   * change which track is first, and so the one that plays when none was picked.
+   */
+  #arrange(): void {
+    saveSettings();
+    this.tracks = arranged(this.#own);
+    if (this.selected !== this.#loaded) void this.#prepare().then(() => this.#sync());
   }
 
   async #prepare(): Promise<void> {
@@ -186,7 +232,7 @@ class NightMusic {
     if (id === this.#loaded) return;
     this.#loaded = id;
     player.setLevel(settings.musicVolume);
-    const data = await trackData(id);
+    const data = id ? await trackData(id) : null;
     // Another track may have been picked while this one was loading.
     if (this.#loaded === id) player.load(data);
   }

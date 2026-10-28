@@ -7,7 +7,7 @@
   <button
     type="button"
     aria-label="Previous track"
-    disabled={music.tracks.length < 2}
+    disabled={music.playlist.length < 2}
     onclick={() => music.skip(-1)}
   >
     <Icon name="prev" size={20} />
@@ -23,7 +23,7 @@
   <button
     type="button"
     aria-label="Next track"
-    disabled={music.tracks.length < 2}
+    disabled={music.playlist.length < 2}
     onclick={() => music.skip(1)}
   >
     <Icon name="skip" size={20} />

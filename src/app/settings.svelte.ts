@@ -22,8 +22,16 @@ export interface Settings {
   nightTrack: string | null;
   /** Names the host gave tracks, by track id; the rest keep their own. */
   trackNames: Record<string, string>;
+  /** Track ids in the host's order; tracks not in it come last. */
+  trackOrder: string[];
+  /** Built-in tracks the host hid. */
+  hiddenTracks: string[];
   /** 0–1. */
   musicVolume: number;
+}
+
+function ids(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [];
 }
 
 function initial(): Settings {
@@ -47,6 +55,8 @@ function initial(): Settings {
             Object.entries(saved.trackNames).filter(([, name]) => typeof name === 'string'),
           )
         : {},
+    trackOrder: ids(saved?.trackOrder),
+    hiddenTracks: ids(saved?.hiddenTracks),
     musicVolume:
       typeof saved?.musicVolume === 'number' && saved.musicVolume >= 0 && saved.musicVolume <= 1
         ? saved.musicVolume

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { cue } from '../cues';
   import { music } from '../music.svelte';
   import { saveSettings, settings } from '../settings.svelte';
@@ -9,6 +10,62 @@
   /** The track whose name is being edited. */
   let editing: string | null = $state(null);
   let field: HTMLInputElement | undefined = $state();
+  let showHidden = $state(false);
+  const hidden = $derived(music.tracks.filter((t) => t.hidden));
+
+  const GAP = 8;
+  /** A track being dragged by its grip: where it started, where it would land. */
+  let drag: {
+    id: string;
+    from: number;
+    to: number;
+    startY: number;
+    dy: number;
+    /** Row height plus the gap: how far one place is. */
+    pitch: number;
+  } | null = $state(null);
+
+  function grab(event: PointerEvent, id: string, index: number) {
+    if (event.button !== 0 || editing) return;
+    const grip = event.currentTarget as HTMLElement;
+    grip.setPointerCapture(event.pointerId);
+    const pitch = (grip.parentElement?.offsetHeight ?? 0) + GAP;
+    drag = { id, from: index, to: index, startY: event.clientY, dy: 0, pitch };
+  }
+
+  function pull(event: PointerEvent) {
+    if (!drag) return;
+    const last = music.playlist.length - 1;
+    const dy = event.clientY - drag.startY;
+    drag.dy = Math.max(-drag.from * drag.pitch, Math.min((last - drag.from) * drag.pitch, dy));
+    drag.to = drag.from + Math.round(drag.dy / drag.pitch);
+  }
+
+  function drop() {
+    if (drag && drag.to !== drag.from) music.move(drag.id, drag.to);
+    drag = null;
+  }
+
+  /** Where a row is drawn during a drag: the dragged one follows the finger, others make room. */
+  function offset(index: number): number {
+    if (!drag) return 0;
+    const { from, to, pitch } = drag;
+    if (index === from) return drag.dy;
+    if (from < to && index > from && index <= to) return -pitch;
+    if (from > to && index < from && index >= to) return pitch;
+    return 0;
+  }
+
+  /** Arrow keys on a grip move its track; the grip keeps the focus. */
+  async function nudge(event: KeyboardEvent, id: string, index: number) {
+    const by = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+    const to = index + by;
+    if (!by || to < 0 || to >= music.playlist.length) return;
+    event.preventDefault();
+    music.move(id, to);
+    await tick();
+    document.querySelector<HTMLElement>(`[data-grip="${id}"]`)?.focus();
+  }
 
   function rename(id: string, input: HTMLInputElement) {
     if (editing !== id) return;
@@ -55,68 +112,123 @@
     />
   </label>
 
-  {#each music.tracks as track (track.id)}
-    <div class="row" class:own={!track.builtIn}>
-      {#if editing === track.id}
-        <input
-          class="track name"
-          aria-label="Track name"
-          value={track.name}
-          maxlength="40"
-          enterkeyhint="done"
-          bind:this={field}
-          {@attach focus}
-          onblur={(e) => rename(track.id, e.currentTarget)}
-          onkeydown={(e) => {
-            if (e.key === 'Enter') rename(track.id, e.currentTarget);
-            if (e.key === 'Escape') editing = null;
-          }}
-        />
-      {:else}
+  <div class="list" class:dragging={drag}>
+    {#each music.playlist as track, index (track.id)}
+      <div
+        class="row"
+        class:lifted={drag?.id === track.id}
+        style:transform={drag ? `translateY(${offset(index)}px)` : null}
+      >
         <button
           type="button"
-          class="track"
-          class:on={music.selected === track.id}
-          aria-pressed={music.selected === track.id}
-          onclick={() => music.select(track.id)}
+          class="icon-button grip"
+          data-grip={track.id}
+          aria-label="Move {track.name} (arrow keys)"
+          onpointerdown={(e) => grab(e, track.id, index)}
+          onpointermove={pull}
+          onpointerup={drop}
+          onpointercancel={() => (drag = null)}
+          onkeydown={(e) => nudge(e, track.id, index)}
         >
-          <Icon name="music" />
-          <span>{track.name}</span>
+          <Icon name="grip" />
         </button>
-      {/if}
-      {#if editing === track.id}
-        <!-- Keeps the focus in the field, so its blur doesn't save first. -->
-        <button
-          type="button"
-          class="icon-button"
-          aria-label="Save name"
-          onpointerdown={(e) => e.preventDefault()}
-          onclick={() => field && rename(track.id, field)}
-        >
-          <Icon name="check" />
-        </button>
-      {:else}
-        <button
-          type="button"
-          class="icon-button"
-          aria-label="Rename {track.name}"
-          onclick={() => (editing = track.id)}
-        >
-          <Icon name="edit" />
-        </button>
-      {/if}
-      {#if !track.builtIn}
-        <button
-          type="button"
-          class="icon-button"
-          aria-label="Delete {track.name}"
-          onclick={() => music.remove(track.id)}
-        >
-          <Icon name="remove" />
-        </button>
-      {/if}
-    </div>
-  {/each}
+        {#if editing === track.id}
+          <input
+            class="track name"
+            aria-label="Track name"
+            value={track.name}
+            maxlength="40"
+            enterkeyhint="done"
+            bind:this={field}
+            {@attach focus}
+            onblur={(e) => rename(track.id, e.currentTarget)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') rename(track.id, e.currentTarget);
+              if (e.key === 'Escape') editing = null;
+            }}
+          />
+          <!-- Keeps the focus in the field, so its blur doesn't save first. -->
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Save name"
+            onpointerdown={(e) => e.preventDefault()}
+            onclick={() => field && rename(track.id, field)}
+          >
+            <Icon name="check" />
+          </button>
+        {:else}
+          <button
+            type="button"
+            class="track"
+            class:on={music.selected === track.id}
+            aria-pressed={music.selected === track.id}
+            onclick={() => music.select(track.id)}
+          >
+            <Icon name="music" />
+            <span>{track.name}</span>
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Rename {track.name}"
+            onclick={() => (editing = track.id)}
+          >
+            <Icon name="edit" />
+          </button>
+        {/if}
+        {#if track.builtIn}
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Hide {track.name}"
+            onclick={() => music.hide(track.id)}
+          >
+            <Icon name="hide" />
+          </button>
+        {:else}
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Delete {track.name}"
+            onclick={() => music.remove(track.id)}
+          >
+            <Icon name="remove" />
+          </button>
+        {/if}
+      </div>
+    {/each}
+  </div>
+
+  {#if hidden.length > 0}
+    <button
+      type="button"
+      class="disclose"
+      aria-expanded={showHidden}
+      onclick={() => (showHidden = !showHidden)}
+    >
+      <Icon name="hide" size={20} />
+      <span>Hidden ({hidden.length})</span>
+    </button>
+    {#if showHidden}
+      {#each hidden as track (track.id)}
+        <div class="row hidden-row">
+          <span class="track">
+            <Icon name="music" />
+            <span>{track.name}</span>
+          </span>
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Show {track.name}"
+            onclick={() => music.show(track.id)}
+          >
+            <Icon name="eye" />
+          </button>
+        </div>
+      {/each}
+    {/if}
+  {/if}
 
   <label class="add" class:busy>
     <Icon name="plus" />
@@ -148,14 +260,49 @@
     justify-self: center;
   }
 
-  .row {
+  .list {
     display: grid;
-    grid-template-columns: 1fr var(--tap);
     gap: 8px;
   }
 
-  .row.own {
-    grid-template-columns: 1fr var(--tap) var(--tap);
+  .row {
+    display: grid;
+    grid-template-columns: 32px 1fr var(--tap) var(--tap);
+    gap: 8px;
+    position: relative;
+  }
+
+  .dragging .row {
+    transition: transform 150ms ease;
+  }
+
+  .dragging .row.lifted {
+    z-index: 1;
+    transition: none;
+  }
+
+  .grip {
+    min-width: 0;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .lifted .grip {
+    cursor: grabbing;
+    color: var(--text);
+  }
+
+  .hidden-row {
+    grid-template-columns: 1fr var(--tap);
+  }
+
+  .disclose {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 6px;
+    background: none;
+    color: var(--text-dim);
   }
 
   .track {
@@ -177,6 +324,15 @@
   .track.on {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .lifted .track {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
+  }
+
+  .hidden-row .track {
+    background: none;
+    color: var(--text-dim);
   }
 
   .switch {
