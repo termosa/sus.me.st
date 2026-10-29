@@ -1,87 +1,116 @@
 <script lang="ts">
-  import { ROLES, type Role, teamOf } from '../../engine/rules';
+  import { fade } from 'svelte/transition';
+  import { ROLES, type Role } from '../../engine/rules';
   import { cardFor } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
   import { vibrate } from '../../platform/haptics';
+  import GameMenu from '../components/GameMenu.svelte';
   import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
-  import { ROLE_ICON, ROLE_NAME } from '../components/RoleArt.svelte';
-  import { cue } from '../cues';
+  import NightMusicBar from '../components/NightMusicBar.svelte';
+  import RoleArt, { ROLE_NAME } from '../components/RoleArt.svelte';
   import { session } from '../game.svelte';
+  import { music } from '../music.svelte';
   import { hint } from '../narration';
+  import { settings } from '../settings.svelte';
 
   /**
-   * Physical cards: each seat in turn takes a card, then the role on it is entered here.
-   * Between seats the roles are covered, so the phone can lie on the table, and nothing
-   * on screen shows the roles entered before (S-5).
+   * Physical cards: each seat in turn takes a card and the role on it is entered here.
+   * Nothing on screen shows the roles entered before (S-5): no counts, and the strip of
+   * seats only marks which are done.
    */
   let { game }: { game: Game } = $props();
 
   const seat = $derived(game.taken.length + 1);
-  /** The seat whose role buttons are showing; any other seat sees the cover. */
-  let open: number | null = $state(null);
-  const covered = $derived(open !== seat);
+  let menuOpen = $state(false);
+  let musicOpen = $state(false);
+
+  /** Shown while a role with no card left is held down, and for at least a second. */
+  let notice: string | null = $state(null);
+  let shownAt = 0;
+  /** The notice came from a press, so the click that follows it adds nothing. */
+  let pressed = false;
+  let hideTimer: ReturnType<typeof setTimeout> | undefined;
+  const NOTICE_MS = 1000;
+
+  function press(role: Role) {
+    if (cardFor(game, role) !== null) return;
+    clearTimeout(hideTimer);
+    notice = `No ${ROLE_NAME[role]} card left. A seat before was entered wrong: undo it.`;
+    shownAt = performance.now();
+    pressed = true;
+    vibrate(60);
+  }
+
+  function release() {
+    if (!notice) return;
+    clearTimeout(hideTimer);
+    const left = NOTICE_MS - (performance.now() - shownAt);
+    hideTimer = setTimeout(() => (notice = null), Math.max(0, left));
+  }
 
   function give(role: Role) {
     const card = cardFor(game, role);
-    if (card === null) {
-      // Only after a wrong entry for an earlier seat; undo fixes it.
-      vibrate(80);
-      cue('error');
-      return;
+    if (card !== null) {
+      session.dispatch({ type: 'pick', card });
+    } else if (pressed) {
+      pressed = false;
+    } else {
+      // A click without a press first, as from the keyboard.
+      press(role);
+      pressed = false;
+      release();
     }
-    session.dispatch({ type: 'pick', card });
   }
-
-  // Cover the roles before the OS snapshots the app switcher.
-  $effect(() => {
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') open = null;
-    };
-    document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
-  });
 </script>
 
 <main>
   <header>
     {#if game.taken.length === 0}
-      <!-- Nothing entered yet, so going back to the player count loses nothing. -->
-      <button type="button" class="back" aria-label="Back" onclick={session.quit}>
+      <!-- Nothing entered yet, so going back to the dealing choice loses nothing. -->
+      <button type="button" class="icon" aria-label="Back" onclick={session.backToSetup}>
         <Icon name="back" />
       </button>
     {:else}
-      <HoldButton label="Undo" tone="plain" onconfirm={session.undo}>
+      <button type="button" class="icon" aria-label="Undo" onclick={session.undo}>
         <Icon name="undo" />
-      </HoldButton>
+      </button>
     {/if}
     <div class="who" role="img" aria-label="Seat {seat}">
       <Icon name="person" size={28} />
       <span>{seat}</span>
     </div>
-    <span class="spacer"></span>
+    <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
+      <Icon name="menu" />
+    </button>
+    {#if settings.nightMusic && music.playlist.length > 0}
+      <div class="music-bar"><NightMusicBar onopen={() => (musicOpen = true)} /></div>
+    {/if}
   </header>
 
-  {#if covered}
-    <Hint text="Seat {seat}: take a card, then tap to enter its role." />
+  <Hint text={hint(game)} />
 
-    <button type="button" class="cover" onclick={() => (open = seat)}>
-      <Icon name="cards" size={56} />
-      <span>Tap to enter the role</span>
-    </button>
-  {:else}
-    <Hint text={hint(game)} />
-
-    <div class="roles">
-      {#each ROLES as role (role)}
-        <button type="button" class="role {teamOf(role)}" onclick={() => give(role)}>
-          <Icon name={ROLE_ICON[role]} size={40} />
-          <span class="name">{ROLE_NAME[role]}</span>
-        </button>
-      {/each}
-    </div>
-  {/if}
+  <div class="roles">
+    {#each ROLES as role (role)}
+      <button
+        type="button"
+        class="role"
+        aria-label={ROLE_NAME[role]}
+        onpointerdown={() => press(role)}
+        onpointerup={release}
+        onpointercancel={release}
+        onpointerleave={release}
+        onclick={() => give(role)}
+        oncontextmenu={(e) => e.preventDefault()}
+      >
+        <RoleArt {role} />
+      </button>
+    {/each}
+    {#if notice}
+      <p class="notice" role="alert" transition:fade={{ duration: 120 }}>{notice}</p>
+    {/if}
+  </div>
 
   <!-- Progress only: which seats are done, never their roles. -->
   <ol class="seats" aria-label="Seats entered">
@@ -97,14 +126,22 @@
   </ol>
 </main>
 
+<GameMenu bind:menu={menuOpen} bind:music={musicOpen}>
+  {#snippet actions()}
+    <HoldButton label="New game" onconfirm={session.quit}>
+      <Icon name="restart" size={28} />
+    </HoldButton>
+  {/snippet}
+</GameMenu>
+
 <style>
   main {
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     justify-items: center;
     height: 100%;
-    padding: 12px 16px 16px;
-    gap: 16px;
+    padding: 8px 16px 16px;
+    gap: 12px;
   }
 
   header {
@@ -114,15 +151,18 @@
     align-items: center;
   }
 
-  header :global(.hold),
-  .back {
-    color: var(--text-dim);
-    background: none;
+  .music-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
   }
 
-  .back {
+  .icon {
     display: grid;
     place-items: center;
+    color: var(--text-dim);
+    background: none;
   }
 
   .who {
@@ -134,52 +174,53 @@
     font-weight: 800;
   }
 
+  /* Portrait cards like the real ones: 2×2, or one row of 4 on a wide screen. */
   .roles {
+    --cols: 2;
+    --rows: 2;
+    position: relative;
     align-self: center;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(var(--cols), 1fr);
     gap: 12px;
-    width: min(100%, var(--content-max));
+    width: min(100%, (100dvh - 340px) / var(--rows) * 3 / 4 * var(--cols), 560px);
   }
 
-  .cover {
-    align-self: center;
-    display: grid;
-    place-items: center;
-    gap: 16px;
-    width: min(100%, var(--content-max));
-    min-height: 220px;
-    font-size: 20px;
-    font-weight: 700;
-    background: var(--card-back);
-    border: 2px solid var(--surface-2);
+  @media (orientation: landscape) {
+    .roles {
+      --cols: 4;
+      --rows: 1;
+      width: min(100%, (100dvh - 250px) * 3 / 4 * var(--cols), 960px);
+    }
   }
 
   .role {
-    display: grid;
-    place-items: center;
-    gap: 6px;
-    padding: 20px 8px;
-    border: 2px solid transparent;
+    aspect-ratio: 3 / 4;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    background: none;
+    transition: scale 100ms ease;
   }
 
-  .role.red {
-    background: #2a0b0d;
-    color: #ffd9da;
-    border-color: #7a1d22;
+  .role:active {
+    scale: 0.96;
   }
 
-  .role.black {
-    background: #101016;
-    color: #e8e8f0;
-    border-color: var(--black);
-  }
-
-  .name {
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+  .notice {
+    position: absolute;
+    inset: 50% 0 auto;
+    translate: 0 -50%;
+    margin: 0;
+    padding: 16px 20px;
+    border: 2px solid var(--warn);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
   }
 
   .seats {
@@ -213,26 +254,33 @@
     color: var(--text);
   }
 
-  /* Short landscape phones: roles in one row, seats in one row. */
+  /* Short landscape phones: the music bar in the header row, seats in one row. */
   @media (orientation: landscape) and (max-height: 560px) {
     main {
       gap: 8px;
     }
 
+    header {
+      grid-template-columns: var(--tap) auto 1fr var(--tap);
+      gap: 12px;
+    }
+
+    .music-bar {
+      grid-column: 3;
+      grid-row: 1;
+      justify-content: flex-end;
+    }
+
     .roles {
-      grid-template-columns: repeat(4, 1fr);
-    }
-
-    .role {
-      padding: 12px 8px;
-    }
-
-    .cover {
-      min-height: 160px;
+      width: min(100%, (100dvh - 170px) * 3 / 4 * var(--cols), 760px);
     }
 
     .seats {
       grid-template-columns: repeat(10, 1fr);
+    }
+
+    .seats li {
+      min-height: 32px;
     }
   }
 </style>

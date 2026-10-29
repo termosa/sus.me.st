@@ -4,16 +4,14 @@
   import { BEST_MOVE_PICKS, teamOf } from '../../engine/rules';
   import { isSilent, stepKey } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
+  import GameMenu from '../components/GameMenu.svelte';
   import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
-  import MusicPanel from '../components/MusicPanel.svelte';
   import NightMusicBar from '../components/NightMusicBar.svelte';
   import { ROLE_ICON } from '../components/RoleArt.svelte';
   import SeatGrid from '../components/SeatGrid.svelte';
   import SeatSheet from '../components/SeatSheet.svelte';
-  import SettingsPanel from '../components/SettingsPanel.svelte';
-  import Sheet from '../components/Sheet.svelte';
   import TimerRing from '../components/TimerRing.svelte';
   import VotePanel from '../components/VotePanel.svelte';
   import { session } from '../game.svelte';
@@ -32,19 +30,6 @@
   let sheetSeat = $state<number | null>(null);
   let menuOpen = $state(false);
   let musicOpen = $state(false);
-  /** The music sheet was opened from the menu, so it offers a way back. */
-  let fromMenu = $state(false);
-
-  function openMusic(viaMenu: boolean) {
-    menuOpen = false;
-    fromMenu = viaMenu;
-    musicOpen = true;
-  }
-
-  function openMenu() {
-    musicOpen = false;
-    menuOpen = true;
-  }
   let peek = $state(false);
   /** Seats chosen on the grid during the shooting or the best move. */
   let picks = $state<number[]>([]);
@@ -130,7 +115,7 @@
       <Icon name="menu" />
     </button>
     {#if night && settings.nightMusic && music.playlist.length > 0}
-      <div class="music-bar"><NightMusicBar onopen={() => openMusic(false)} /></div>
+      <div class="music-bar"><NightMusicBar onopen={() => (musicOpen = true)} /></div>
     {/if}
   </header>
 
@@ -271,36 +256,28 @@
   <SeatSheet {game} seat={sheetSeat} onclose={() => (sheetSeat = null)} />
 {/if}
 
-{#if musicOpen}
-  <Sheet onclose={() => (musicOpen = false)}>
-    <MusicPanel onback={fromMenu ? openMenu : undefined} />
-  </Sheet>
-{/if}
-
-{#if menuOpen}
-  <Sheet onclose={() => (menuOpen = false)}>
-    <SettingsPanel onmusic={() => openMusic(true)} />
-    <hr />
-    <div class="menu">
-      {#each ['red', 'black'] as const as team (team)}
-        <HoldButton
-          label="{team} team loses"
-          tone="plain"
-          onconfirm={() => {
-            menuOpen = false;
-            session.dispatch({ type: 'teamLoss', team });
-          }}
-        >
-          <Icon name="flag" size={28} />
-          <span class="team {team}"><Icon name={ROLE_ICON[team === 'red' ? 'citizen' : 'mafia']} /></span>
-        </HoldButton>
-      {/each}
-    </div>
-    <HoldButton label="New game" onconfirm={session.quit}>
-      <Icon name="restart" size={28} />
-    </HoldButton>
-  </Sheet>
-{/if}
+<GameMenu bind:menu={menuOpen} bind:music={musicOpen}>
+  {#snippet actions()}
+      <div class="menu">
+        {#each ['red', 'black'] as const as team (team)}
+          <HoldButton
+            label="{team} team loses"
+            tone="plain"
+            onconfirm={() => {
+              menuOpen = false;
+              session.dispatch({ type: 'teamLoss', team });
+            }}
+          >
+            <Icon name="flag" size={28} />
+            <span class="team {team}"><Icon name={ROLE_ICON[team === 'red' ? 'citizen' : 'mafia']} /></span>
+          </HoldButton>
+        {/each}
+      </div>
+      <HoldButton label="New game" onconfirm={session.quit}>
+        <Icon name="restart" size={28} />
+      </HoldButton>
+  {/snippet}
+</GameMenu>
 
 <style>
   main {
@@ -518,13 +495,6 @@
     .actions button {
       min-height: 52px;
     }
-  }
-
-  hr {
-    width: 100%;
-    margin: 4px 0;
-    border: 0;
-    border-top: 1px solid var(--surface-2);
   }
 
   .menu {

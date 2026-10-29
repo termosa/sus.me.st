@@ -27,14 +27,16 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 
 ## Role dealing
 
-After the player count, the host picks how roles are dealt: **On screen** (the card grid below) or **Cards** (physical cards, entered by the host).
+After the player count, the host picks how roles are dealt: **On screen** (the card grid below) or **Cards** (physical cards, entered by the host). Under the player counts, "See the cards" shows the four role cards face up, to introduce them to the players before the game.
+
+Dealing is night: the night music plays, with its bar under the header, and the menu (settings and New game) is in the header as during the game. Until the first seat is dealt, back returns to the dealing choice.
 
 ### Physical cards
 
-- Seats go in order. Each seat starts covered ("Tap to enter the role"), so the phone can lie on the table while the player takes a card.
-- A tap shows the four role buttons; tapping the role on the card enters it and covers the screen for the next seat. Leaving the app covers it too.
-- Nothing on screen shows the roles entered before: no counts left, and the strip of seats only marks which are done. A role with no card left (after a wrong entry) buzzes; undo fixes it.
-- Hold undo to take back the last seat. Before the first seat, back returns to the player count.
+- Seats go in order. The four role buttons are always on screen, shaped and drawn like the cards themselves; tapping the role on the card enters it for the current seat.
+- Nothing on screen shows the roles entered before: no counts left, and the strip of seats only marks which are done.
+- A role with no card left (after a wrong entry) shows a message over the buttons while the finger holds it, and for at least a second; undo fixes it.
+- After the first seat, undo (a tap) takes back the last seat.
 - After the last seat, Night 0 begins.
 
 ### Card grid
@@ -65,9 +67,9 @@ After the player count, the host picks how roles are dealt: **On screen** (the c
 - The host adds their own audio files (stored on the device in IndexedDB, so they work offline) in the music panel. It opens from the "Night music" row in settings (which shows the current track, with a back arrow to settings) or by tapping the track name in the night bar. Added files can be deleted; built-in tracks can be hidden instead. Hidden tracks are listed under "Hidden (n)", where they can be shown again, and next/previous at night skips them.
 - Tracks are reordered by dragging their grip (or with the arrow keys on it). The order is the order of next/previous at night; when no track was picked, the first one plays.
 - Any track can be renamed by double-tapping it (the first tap picks it): Enter, the check button or tapping away saves, Escape cancels, and an empty name brings back the track's own.
-- One track is chosen at a time. It loops through each night, fading in as night falls and out at morning; the choice can change before or during any night.
+- One track is chosen at a time. It loops through each night (dealing included), fading in as night falls and out at morning; the choice can change before or during any night.
 - The voice lowers the music while it speaks.
-- During nights a bar under the header has previous track, play/pause, next track and the track name. A pause holds until resumed or the next night.
+- During nights (and dealing) a bar under the header has previous track, play/pause, next track and the track name. A pause holds until resumed or the next night.
 - A "Night music" switch in the music panel turns it off altogether; the settings row then reads "Off".
 
 ## Voting

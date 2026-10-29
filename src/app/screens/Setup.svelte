@@ -4,41 +4,33 @@
   import { isIOS, isStandalone } from '../../platform/pwa';
   import { persistStorage } from '../../platform/storage';
   import { keepAwake } from '../../platform/wakelock';
+  import CardsPreview from '../components/CardsPreview.svelte';
+  import GameMenu from '../components/GameMenu.svelte';
   import Hint from '../components/Hint.svelte';
   import Icon from '../components/Icon.svelte';
-  import MusicPanel from '../components/MusicPanel.svelte';
-  import SettingsPanel from '../components/SettingsPanel.svelte';
-  import Sheet from '../components/Sheet.svelte';
   import UpdateButton from '../components/UpdateButton.svelte';
   import { session } from '../game.svelte';
+  import { setupStep } from '../setup-step.svelte';
 
   let settingsOpen = $state(false);
-  let musicOpen = $state(false);
+  let previewOpen = $state(false);
 
-  function openMusic() {
-    settingsOpen = false;
-    musicOpen = true;
+  function choose(count: PlayerCount | null) {
+    setupStep.count = count;
   }
-
-  function openSettings() {
-    musicOpen = false;
-    settingsOpen = true;
-  }
-  /** Picked player count; then the host chooses how roles are dealt. */
-  let count: PlayerCount | null = $state(null);
 
   function start(dealing: Dealing) {
-    if (!count) return;
+    if (!setupStep.count) return;
     keepAwake(true);
     persistStorage();
-    session.start(count, dealing);
+    session.start(setupStep.count, dealing);
   }
 </script>
 
 <main>
   <header>
-    {#if count}
-      <button type="button" class="icon back" aria-label="Back" onclick={() => (count = null)}>
+    {#if setupStep.count}
+      <button type="button" class="icon back" aria-label="Back" onclick={() => choose(null)}>
         <Icon name="back" />
       </button>
     {/if}
@@ -50,10 +42,10 @@
 
   <div class="logo"><Icon name="mask" size={96} /></div>
 
-  {#if count}
+  {#if setupStep.count}
     <Hint text="How are roles dealt? On screen, or with physical cards you enter seat by seat." />
 
-    <div class="counts">
+    <div class="counts last">
       <button type="button" class="count mode" onclick={() => start('app')}>
         <Icon name="phone" size={48} />
         <span>On screen</span>
@@ -68,12 +60,18 @@
 
     <div class="counts">
       {#each PLAYER_COUNTS as n (n)}
-        <button type="button" class="count" onclick={() => (count = n)}>
+        <button type="button" class="count" onclick={() => choose(n)}>
           <span>{n}</span>
           <Icon name="person" size={28} />
         </button>
       {/each}
     </div>
+
+    <!-- To introduce the roles to the players before the game. -->
+    <button type="button" class="preview" onclick={() => (previewOpen = true)}>
+      <Icon name="cards" size={20} />
+      <span>See the cards</span>
+    </button>
   {/if}
 
   {#if isIOS && !isStandalone}
@@ -84,22 +82,16 @@
   {/if}
 </main>
 
-{#if musicOpen}
-  <Sheet onclose={() => (musicOpen = false)}>
-    <MusicPanel onback={openSettings} />
-  </Sheet>
-{/if}
+<GameMenu bind:menu={settingsOpen} />
 
-{#if settingsOpen}
-  <Sheet onclose={() => (settingsOpen = false)}>
-    <SettingsPanel onmusic={openMusic} />
-  </Sheet>
+{#if previewOpen}
+  <CardsPreview onclose={() => (previewOpen = false)} />
 {/if}
 
 <style>
   main {
     display: grid;
-    grid-template-rows: auto 1fr auto auto auto;
+    grid-template-rows: auto 1fr auto auto auto auto;
     justify-items: center;
     height: 100%;
     padding: 16px;
@@ -128,7 +120,6 @@
   .counts {
     display: flex;
     gap: 20px;
-    padding-bottom: 12dvh;
   }
 
   .count {
@@ -166,8 +157,29 @@
 
     .counts {
       align-self: center;
-      padding-bottom: 0;
     }
+
+    .preview,
+    .last {
+      margin-bottom: 0;
+    }
+  }
+
+  .preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background: none;
+    color: var(--text-dim);
+    border: 1px solid var(--surface-2);
+  }
+
+  /* The last row sits a little above the bottom. */
+  .preview,
+  .last {
+    margin-bottom: 8dvh;
   }
 
   .install {

@@ -3,15 +3,22 @@
   import { fade } from 'svelte/transition';
   import { cardsLeft } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
+  import GameMenu from '../components/GameMenu.svelte';
   import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
+  import NightMusicBar from '../components/NightMusicBar.svelte';
   import RoleArt from '../components/RoleArt.svelte';
   import { session } from '../game.svelte';
   import { shrinkAway, zoomFrom } from '../motion/transition';
+  import { music } from '../music.svelte';
   import { hint } from '../narration';
+  import { settings } from '../settings.svelte';
 
   let { game }: { game: Game } = $props();
+
+  let menuOpen = $state(false);
+  let musicOpen = $state(false);
 
   const seat = $derived(game.taken.length + 1);
   // Picked cards leave the grid; the rest are renumbered from 1 (S-6).
@@ -71,8 +78,8 @@
 <main>
   <header>
     {#if game.taken.length === 0}
-      <!-- Nothing picked yet, so going back to the player count loses nothing. -->
-      <button type="button" class="back" aria-label="Back" onclick={session.quit}>
+      <!-- Nothing picked yet, so going back to the dealing choice loses nothing. -->
+      <button type="button" class="icon" aria-label="Back" onclick={session.backToSetup}>
         <Icon name="back" />
       </button>
     {:else}
@@ -84,7 +91,12 @@
       <Icon name="person" size={28} />
       <span>{seat}</span>
     </div>
-    <span class="spacer"></span>
+    <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
+      <Icon name="menu" />
+    </button>
+    {#if settings.nightMusic && music.playlist.length > 0}
+      <div class="music-bar"><NightMusicBar onopen={() => (musicOpen = true)} /></div>
+    {/if}
   </header>
 
   <Hint text={hint(game)} />
@@ -133,6 +145,14 @@
   </button>
 {/if}
 
+<GameMenu bind:menu={menuOpen} bind:music={musicOpen}>
+  {#snippet actions()}
+    <HoldButton label="New game" onconfirm={session.quit}>
+      <Icon name="restart" size={28} />
+    </HoldButton>
+  {/snippet}
+</GameMenu>
+
 <style>
   main {
     display: grid;
@@ -150,13 +170,34 @@
     align-items: center;
   }
 
+  .music-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  /* Short landscape phones: the music bar sits in the header row, leaving height for cards. */
+  @media (orientation: landscape) and (max-height: 560px) {
+    header {
+      grid-template-columns: var(--tap) auto 1fr var(--tap);
+      gap: 12px;
+    }
+
+    .music-bar {
+      grid-column: 3;
+      grid-row: 1;
+      justify-content: flex-end;
+    }
+  }
+
   header :global(.hold),
-  .back {
+  .icon {
     color: var(--text-dim);
     background: none;
   }
 
-  .back {
+  .icon {
     display: grid;
     place-items: center;
   }
@@ -172,6 +213,8 @@
 
   /* Sized by the height too, so 3×4 cards (5×2 on a wide screen) always fit. */
   .grid {
+    /* Header, music bar and hint above the cards. */
+    --chrome: 240px;
     --rows: 4;
     --cols: 3;
     display: grid;
@@ -179,7 +222,7 @@
     grid-auto-rows: min-content;
     align-content: center;
     gap: 12px;
-    width: min(100%, (100dvh - 180px) * var(--cols) * 3 / (var(--rows) * 4), 640px);
+    width: min(100%, (100dvh - var(--chrome)) * var(--cols) * 3 / (var(--rows) * 4), 640px);
   }
 
   @media (orientation: landscape) {
@@ -261,5 +304,11 @@
 
   .front :global(.art) {
     width: 100%;
+  }
+
+  @media (orientation: landscape) and (max-height: 560px) {
+    .grid {
+      --chrome: 150px;
+    }
   }
 </style>

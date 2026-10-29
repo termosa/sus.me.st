@@ -30,10 +30,13 @@
 </div>
 
 <style>
+  /* Scales with the card it is drawn on: the big dealt card, the preview, the role buttons. */
   .art {
+    container-type: inline-size;
     display: grid;
-    place-items: center;
-    gap: 20px;
+    place-content: center;
+    justify-items: center;
+    gap: 6cqi;
     height: 100%;
     border-radius: inherit;
   }
@@ -51,14 +54,19 @@
   .disc {
     display: grid;
     place-items: center;
-    width: 160px;
-    height: 160px;
+    width: 42cqi;
+    height: 42cqi;
     border-radius: 50%;
-    border: 3px solid currentColor;
+    border: max(2px, 0.8cqi) solid currentColor;
+  }
+
+  .disc :global(.icon) {
+    width: 55%;
+    height: auto;
   }
 
   .name {
-    font-size: 32px;
+    font-size: 8cqi;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;

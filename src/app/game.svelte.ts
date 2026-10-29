@@ -12,11 +12,17 @@ import { music } from './music.svelte';
 import { announcement } from './narration';
 import { GAME_KEY, restore, type Saved, SCHEMA_VERSION } from './session';
 import { settings } from './settings.svelte';
+import { setupStep } from './setup-step.svelte';
 
 const TIMER_KEY = 'timer:v1';
 
 function isNight(step: Step): boolean {
   return step.kind === 'night' || step.kind === 'night0';
+}
+
+/** Dealing happens at night too (S-6), so its music plays from the first card. */
+function hasNightMusic(step: Step): boolean {
+  return isNight(step) || step.kind === 'deal';
 }
 
 function phaseChanged(before: Game, after: Game): boolean {
@@ -65,8 +71,16 @@ class Session {
 
   start(count: PlayerCount, dealing: Dealing): void {
     const setup = createSetup(count, settings.timings, dealing);
+    setupStep.count = null;
     this.#commit(setup, [], newGame(setup));
   }
+
+  /** Before any card is dealt: back to the start screen's dealing choice, for the same count. */
+  backToSetup = (): void => {
+    const count = this.#setup?.playerCount ?? null;
+    this.quit();
+    setupStep.count = count;
+  };
 
   /** Applies a host action; returns false (and buzzes) when the rules don't allow it. */
   dispatch = (action: GameEvent): boolean => {
@@ -148,7 +162,7 @@ class Session {
     save(GAME_KEY, saved);
     save(TIMER_KEY, this.#timer);
     // Called inside the tap that changed the step, so the music may start.
-    music.setNight(isNight(game.step));
+    music.setNight(hasNightMusic(game.step));
     const timer = this.#timer;
     const show = () => {
       this.game = game;
