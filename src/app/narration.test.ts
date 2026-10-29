@@ -52,7 +52,7 @@ describe('announcement', () => {
 describe('hint', () => {
   it("asks for the role on the seat's card when dealing physical cards", () => {
     const cards = replay({ ...setup, dealing: 'cards' }, deal.slice(0, 2));
-    expect(hint(cards)).toBe('Seat 3: tap the role on their card.');
+    expect(hint(cards)).toBe('Seat 3: tap the role on the card.');
     expect(hint(at(deal.slice(0, 2)))).toMatch(/^Seat 3 picks a card\./);
   });
 

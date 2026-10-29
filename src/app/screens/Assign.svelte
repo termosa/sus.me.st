@@ -1,31 +1,47 @@
 <script lang="ts">
   import { ROLES, type Role, teamOf } from '../../engine/rules';
-  import { cardFor, rolesLeft } from '../../engine/selectors';
+  import { cardFor } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
+  import { vibrate } from '../../platform/haptics';
   import Hint from '../components/Hint.svelte';
   import HoldButton from '../components/HoldButton.svelte';
   import Icon from '../components/Icon.svelte';
   import { ROLE_ICON, ROLE_NAME } from '../components/RoleArt.svelte';
+  import { cue } from '../cues';
   import { session } from '../game.svelte';
   import { hint } from '../narration';
 
-  /** Physical cards: the host enters the role on each seat's card, in seat order. */
+  /**
+   * Physical cards: each seat in turn takes a card, then the role on it is entered here.
+   * Between seats the roles are covered, so the phone can lie on the table, and nothing
+   * on screen shows the roles entered before (S-5).
+   */
   let { game }: { game: Game } = $props();
 
   const seat = $derived(game.taken.length + 1);
-  const left = $derived(rolesLeft(game));
-  /** Every seat with the role entered for it so far. */
-  const seats = $derived(
-    Array.from({ length: game.setup.playerCount }, (_, i) => ({
-      n: i + 1,
-      role: game.setup.deck[game.taken[i] ?? -1],
-    })),
-  );
+  /** The seat whose role buttons are showing; any other seat sees the cover. */
+  let open: number | null = $state(null);
+  const covered = $derived(open !== seat);
 
   function give(role: Role) {
     const card = cardFor(game, role);
-    if (card !== null) session.dispatch({ type: 'pick', card });
+    if (card === null) {
+      // Only after a wrong entry for an earlier seat; undo fixes it.
+      vibrate(80);
+      cue('error');
+      return;
+    }
+    session.dispatch({ type: 'pick', card });
   }
+
+  // Cover the roles before the OS snapshots the app switcher.
+  $effect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') open = null;
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  });
 </script>
 
 <main>
@@ -47,33 +63,35 @@
     <span class="spacer"></span>
   </header>
 
-  <Hint text={hint(game)} />
+  {#if covered}
+    <Hint text="Seat {seat}: take a card, then tap to enter its role." />
 
-  <div class="roles">
-    {#each ROLES as role (role)}
-      <button
-        type="button"
-        class="role {teamOf(role)}"
-        disabled={left[role] === 0}
-        aria-label="{ROLE_NAME[role]}, {left[role]} left"
-        onclick={() => give(role)}
-      >
-        <Icon name={ROLE_ICON[role]} size={40} />
-        <span class="name">{ROLE_NAME[role]}</span>
-        <span class="left">{left[role]}</span>
-      </button>
-    {/each}
-  </div>
+    <button type="button" class="cover" onclick={() => (open = seat)}>
+      <Icon name="cards" size={56} />
+      <span>Tap to enter the role</span>
+    </button>
+  {:else}
+    <Hint text={hint(game)} />
 
-  <ol class="seats" aria-label="Roles entered">
-    {#each seats as { n, role } (n)}
+    <div class="roles">
+      {#each ROLES as role (role)}
+        <button type="button" class="role {teamOf(role)}" onclick={() => give(role)}>
+          <Icon name={ROLE_ICON[role]} size={40} />
+          <span class="name">{ROLE_NAME[role]}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Progress only: which seats are done, never their roles. -->
+  <ol class="seats" aria-label="Seats entered">
+    {#each { length: game.setup.playerCount } as _, i (i)}
       <li
-        class={role ? teamOf(role) : ''}
-        class:current={n === seat}
-        aria-label={role ? `Seat ${n}: ${ROLE_NAME[role]}` : `Seat ${n}`}
+        class:done={i < game.taken.length}
+        class:current={i + 1 === seat}
+        aria-label={i < game.taken.length ? `Seat ${i + 1}: entered` : `Seat ${i + 1}`}
       >
-        <span>{n}</span>
-        {#if role}<Icon name={ROLE_ICON[role]} size={18} />{/if}
+        {i + 1}
       </li>
     {/each}
   </ol>
@@ -124,8 +142,20 @@
     width: min(100%, var(--content-max));
   }
 
+  .cover {
+    align-self: center;
+    display: grid;
+    place-items: center;
+    gap: 16px;
+    width: min(100%, var(--content-max));
+    min-height: 220px;
+    font-size: 20px;
+    font-weight: 700;
+    background: var(--card-back);
+    border: 2px solid var(--surface-2);
+  }
+
   .role {
-    position: relative;
     display: grid;
     place-items: center;
     gap: 6px;
@@ -145,24 +175,11 @@
     border-color: var(--black);
   }
 
-  .role:disabled {
-    opacity: 0.3;
-  }
-
   .name {
     font-size: 20px;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-  }
-
-  .left {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    font-size: 18px;
-    font-weight: 700;
-    opacity: 0.8;
   }
 
   .seats {
@@ -176,10 +193,8 @@
   }
 
   .seats li {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+    display: grid;
+    place-items: center;
     min-height: 40px;
     border: 2px solid transparent;
     border-radius: 10px;
@@ -188,14 +203,9 @@
     font-weight: 700;
   }
 
-  .seats li.red {
-    color: #ffd9da;
-    background: #2a0b0d;
-  }
-
-  .seats li.black {
-    color: #e8e8f0;
-    background: #101016;
+  .seats li.done {
+    background: var(--surface-2);
+    color: var(--text);
   }
 
   .seats li.current {
@@ -215,6 +225,10 @@
 
     .role {
       padding: 12px 8px;
+    }
+
+    .cover {
+      min-height: 160px;
     }
 
     .seats {

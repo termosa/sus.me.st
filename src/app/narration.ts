@@ -83,7 +83,7 @@ export function hint(game: Game): string {
   switch (step.kind) {
     case 'deal':
       if (game.setup.dealing === 'cards')
-        return `Seat ${game.taken.length + 1}: tap the role on their card.`;
+        return `Seat ${game.taken.length + 1}: tap the role on the card.`;
       return `Seat ${game.taken.length + 1} picks a card. Tap to zoom, tap to reveal, tap to hide.`;
     case 'night0':
       if (step.stage === 'mafia') return 'Mafia open eyes and meet. Start the timer.';

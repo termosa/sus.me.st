@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isAllowed, newGame, RuleError, reduce, replay } from './game';
 import { DEFAULT_TIMINGS, type PlayerCount, type Role } from './rules';
-import { cardFor, cardsLeft, isSilent, rolesLeft, stepKey, stepSeconds } from './selectors';
+import { cardFor, cardsLeft, isSilent, stepKey, stepSeconds } from './selectors';
 import type { Game, GameEvent, Setup } from './types';
 
 // Card k goes to seat k, so: seat 1 Don, 2–3 Mafia, 4 Sheriff, the rest Citizens.
@@ -54,16 +54,6 @@ describe('dealing (S-6)', () => {
       { card: 8, label: 7 },
       { card: 9, label: 8 },
     ]);
-  });
-
-  it('counts the roles still to give out', () => {
-    expect(rolesLeft(newGame(setup()))).toEqual({ citizen: 6, sheriff: 1, mafia: 2, don: 1 });
-    const game = play([
-      { type: 'pick', card: 0 },
-      { type: 'pick', card: 1 },
-      { type: 'pick', card: 5 },
-    ]);
-    expect(rolesLeft(game)).toEqual({ citizen: 5, sheriff: 1, mafia: 1, don: 0 });
   });
 
   it('finds a card for a role told by the host (physical cards)', () => {

@@ -1,4 +1,4 @@
-import { ROLES, type Role } from './rules';
+import type { Role } from './rules';
 import type { Game, Player } from './types';
 
 export function alivePlayers(game: Game): Player[] {
@@ -66,16 +66,6 @@ export function cardsLeft(game: Game): { card: number; label: number }[] {
     .map((_, card) => card)
     .filter((card) => !game.taken.includes(card))
     .map((card, i) => ({ card, label: i + 1 }));
-}
-
-/** How many of each role is still to be given out. */
-export function rolesLeft(game: Game): Record<Role, number> {
-  const left = Object.fromEntries(ROLES.map((role) => [role, 0])) as Record<Role, number>;
-  for (const { card } of cardsLeft(game)) {
-    const role = game.setup.deck[card];
-    if (role) left[role] += 1;
-  }
-  return left;
 }
 
 /**

@@ -31,9 +31,9 @@ After the player count, the host picks how roles are dealt: **On screen** (the c
 
 ### Physical cards
 
-- The players draw physical cards as usual; the host then enters each seat's role in seat order.
-- Four role buttons show how many of each role are left; a role with none left is greyed out.
-- A strip of seats shows the roles entered so far and the seat being entered.
+- Seats go in order. Each seat starts covered ("Tap to enter the role"), so the phone can lie on the table while the player takes a card.
+- A tap shows the four role buttons; tapping the role on the card enters it and covers the screen for the next seat. Leaving the app covers it too.
+- Nothing on screen shows the roles entered before: no counts left, and the strip of seats only marks which are done. A role with no card left (after a wrong entry) buzzes; undo fixes it.
 - Hold undo to take back the last seat. Before the first seat, back returns to the player count.
 - After the last seat, Night 0 begins.
 
