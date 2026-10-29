@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { ROLES, type Role } from '../../engine/rules';
+  import type { Role } from '../../engine/rules';
   import { cardFor } from '../../engine/selectors';
   import type { Game } from '../../engine/types';
   import { vibrate } from '../../platform/haptics';
@@ -21,6 +21,9 @@
    * seats only marks which are done.
    */
   let { game }: { game: Game } = $props();
+
+  /** Citizen, the most common card, sits bottom right: the easiest reach for the thumb. */
+  const ORDER: Role[] = ['don', 'sheriff', 'mafia', 'citizen'];
 
   const seat = $derived(game.taken.length + 1);
   let menuOpen = $state(false);
@@ -92,7 +95,7 @@
   <Hint text={hint(game)} />
 
   <div class="roles">
-    {#each ROLES as role (role)}
+    {#each ORDER as role (role)}
       <button
         type="button"
         class="role"

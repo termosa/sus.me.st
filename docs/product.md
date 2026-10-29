@@ -33,7 +33,7 @@ Dealing is night: the night music plays, with its bar under the header, and the 
 
 ### Physical cards
 
-- Seats go in order. The four role buttons are always on screen, shaped and drawn like the cards themselves; tapping the role on the card enters it for the current seat.
+- Seats go in order. The four role buttons are always on screen, shaped and drawn like the cards themselves; tapping the role on the card enters it for the current seat. They sit Don, Sheriff on top and Mafia, Citizen below (one row in that order on a wide screen), so Citizen, the most common, is the easiest to reach.
 - Nothing on screen shows the roles entered before: no counts left, and the strip of seats only marks which are done.
 - A role with no card left (after a wrong entry) shows a message over the buttons while the finger holds it, and for at least a second; undo fixes it.
 - After the first seat, undo (a tap) takes back the last seat.
