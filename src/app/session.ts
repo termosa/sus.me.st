@@ -32,8 +32,10 @@ export function restore(saved: unknown): { setup: Setup; events: GameEvent[]; ga
   if (!isRecord(saved) || saved.schemaVersion !== SCHEMA_VERSION) return null;
   const { setup, events } = saved;
   if (!isSetup(setup) || !Array.isArray(events)) return null;
+  // Games saved before physical cards were an option were dealt on screen.
+  const dealt: Setup = { ...setup, dealing: setup.dealing === 'cards' ? 'cards' : 'app' };
   try {
-    return { setup, events, game: replay(setup, events) };
+    return { setup: dealt, events, game: replay(dealt, events) };
   } catch {
     return null;
   }

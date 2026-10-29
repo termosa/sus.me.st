@@ -25,7 +25,19 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 - Night 0 (acquaintance) never has a kill.
 - 9 players: Night 1 has no shooting either; the Don's and Sheriff's checks still happen.
 
-## Role dealing (card grid)
+## Role dealing
+
+After the player count, the host picks how roles are dealt: **On screen** (the card grid below) or **Cards** (physical cards, entered by the host).
+
+### Physical cards
+
+- The players draw physical cards as usual; the host then enters each seat's role in seat order.
+- Four role buttons show how many of each role are left; a role with none left is greyed out.
+- A strip of seats shows the roles entered so far and the seat being entered.
+- Hold undo to take back the last seat. Before the first seat, back returns to the player count.
+- After the last seat, Night 0 begins.
+
+### Card grid
 
 - All cards are shown face-down on screen, labelled with numbers.
 - Cards are picked in seat order: the k-th card picked belongs to seat k.
@@ -64,7 +76,6 @@ A host panel for running **one** live game of classic sport mafia from a phone.
 
 ## Deferred to later versions
 
-- Manually assigning roles (host enters roles dealt with physical cards).
 - Other roles and variants beyond Citizen / Sheriff / Mafia / Don.
 - Recording who voted for whom (v1 records counts only).
 - Game history and scoring.

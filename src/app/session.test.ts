@@ -11,6 +11,13 @@ describe('restore', () => {
     expect(restore(saved)?.game.taken).toEqual([4]);
   });
 
+  it('keeps physical-card dealing, and treats saves from before it as dealt on screen', () => {
+    const cards = createSetup(10, DEFAULT_TIMINGS, 'cards');
+    expect(restore({ schemaVersion: 1, setup: cards, events: [] })?.setup.dealing).toBe('cards');
+    const { dealing: _, ...old } = setup;
+    expect(restore({ schemaVersion: 1, setup: old, events: [] })?.setup.dealing).toBe('app');
+  });
+
   it('discards anything it cannot replay', () => {
     expect(restore(null)).toBeNull();
     expect(restore({ schemaVersion: 99, setup, events: [] })).toBeNull();

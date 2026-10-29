@@ -6,7 +6,7 @@ import { announcement, hint } from './narration';
 
 // Card k goes to seat k: seat 1 Don, 2–3 Mafia, 4 Sheriff, the rest Citizens.
 const deck: Role[] = ['don', 'mafia', 'mafia', 'sheriff', ...Array<Role>(6).fill('citizen')];
-const setup: Setup = { playerCount: 10, deck, timings: DEFAULT_TIMINGS };
+const setup: Setup = { playerCount: 10, dealing: 'app', deck, timings: DEFAULT_TIMINGS };
 
 const next: GameEvent = { type: 'next' };
 const deal: GameEvent[] = deck.map((_, card) => ({ type: 'pick', card }));
@@ -50,6 +50,12 @@ describe('announcement', () => {
 });
 
 describe('hint', () => {
+  it("asks for the role on the seat's card when dealing physical cards", () => {
+    const cards = replay({ ...setup, dealing: 'cards' }, deal.slice(0, 2));
+    expect(hint(cards)).toBe('Seat 3: tap the role on their card.');
+    expect(hint(at(deal.slice(0, 2)))).toMatch(/^Seat 3 picks a card\./);
+  });
+
   it('explains why a single nominee on Day 1 gets no vote (V-3)', () => {
     expect(hint(at(day1Single))).toMatch(/^One nominee on Day 1: no vote\./);
   });

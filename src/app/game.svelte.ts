@@ -2,7 +2,7 @@ import { newGame, RuleError, reduce, replay } from '../engine/game';
 import type { PlayerCount, Timings } from '../engine/rules';
 import { stepKey, stepSeconds } from '../engine/selectors';
 import { createSetup } from '../engine/setup';
-import type { Game, GameEvent, Setup, Step } from '../engine/types';
+import type { Dealing, Game, GameEvent, Setup, Step } from '../engine/types';
 import { vibrate } from '../platform/haptics';
 import { forget, load, save } from '../platform/storage';
 import { newTimer, pauseTimer, startTimer, type Timer } from '../platform/timer';
@@ -63,8 +63,8 @@ class Session {
     this.#commit(saved.setup, saved.events, saved.game);
   }
 
-  start(count: PlayerCount): void {
-    const setup = createSetup(count, settings.timings);
+  start(count: PlayerCount, dealing: Dealing): void {
+    const setup = createSetup(count, settings.timings, dealing);
     this.#commit(setup, [], newGame(setup));
   }
 

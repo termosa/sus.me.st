@@ -4,7 +4,7 @@ import { createSetup } from './setup';
 
 describe('createSetup', () => {
   it('shuffles the role deck for the player count', () => {
-    const setup = createSetup(9, DEFAULT_TIMINGS, () => 0.999);
+    const setup = createSetup(9, DEFAULT_TIMINGS, 'app', () => 0.999);
     expect(setup.playerCount).toBe(9);
     expect([...setup.deck].sort()).toEqual([...roleDeck(9)].sort());
     expect(setup.deck).not.toEqual(roleDeck(9));

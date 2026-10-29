@@ -205,7 +205,7 @@ src/
     narration.ts          # per-step voice announcement and first-time hint text
     cues.ts               # sound cues and voice, gated by the settings
     App.svelte            # switches screen by game.phase (+ view transition)
-    screens/              # Setup, Deal, Day, Nomination, Voting, Night, Finished
+    screens/              # Setup, Deal (on screen), Assign (physical cards), Day, Nomination, Voting, Night, Finished
     components/           # CardGrid, RoleCard, TimerRing, PlayerRow, FoulBadge, UndoBar
     motion/               # flip.ts (WAAPI FLIP), viewTransition.ts
     styles/               # tokens.css (dark palette, sizes), base.css (resets, safe areas)

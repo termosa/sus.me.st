@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PLAYER_COUNTS, type PlayerCount } from '../../engine/rules';
+  import type { Dealing } from '../../engine/types';
   import { isIOS, isStandalone } from '../../platform/pwa';
   import { persistStorage } from '../../platform/storage';
   import { keepAwake } from '../../platform/wakelock';
@@ -13,16 +14,24 @@
 
   let settingsOpen = $state(false);
   let musicOpen = $state(false);
+  /** Picked player count; then the host chooses how roles are dealt. */
+  let count: PlayerCount | null = $state(null);
 
-  function start(count: PlayerCount) {
+  function start(dealing: Dealing) {
+    if (!count) return;
     keepAwake(true);
     persistStorage();
-    session.start(count);
+    session.start(count, dealing);
   }
 </script>
 
 <main>
   <header>
+    {#if count}
+      <button type="button" class="icon back" aria-label="Back" onclick={() => (count = null)}>
+        <Icon name="back" />
+      </button>
+    {/if}
     <UpdateButton />
     <button type="button" class="icon" aria-label="Music" onclick={() => (musicOpen = true)}>
       <Icon name="music" />
@@ -34,16 +43,31 @@
 
   <div class="logo"><Icon name="mask" size={96} /></div>
 
-  <Hint text="How many players?" />
+  {#if count}
+    <Hint text="How are roles dealt? On screen, or with physical cards you enter seat by seat." />
 
-  <div class="counts">
-    {#each PLAYER_COUNTS as count (count)}
-      <button type="button" class="count" onclick={() => start(count)}>
-        <span>{count}</span>
-        <Icon name="person" size={28} />
+    <div class="counts">
+      <button type="button" class="count mode" onclick={() => start('app')}>
+        <Icon name="phone" size={48} />
+        <span>On screen</span>
       </button>
-    {/each}
-  </div>
+      <button type="button" class="count mode" onclick={() => start('cards')}>
+        <Icon name="cards" size={48} />
+        <span>Cards</span>
+      </button>
+    </div>
+  {:else}
+    <Hint text="How many players?" />
+
+    <div class="counts">
+      {#each PLAYER_COUNTS as n (n)}
+        <button type="button" class="count" onclick={() => (count = n)}>
+          <span>{n}</span>
+          <Icon name="person" size={28} />
+        </button>
+      {/each}
+    </div>
+  {/if}
 
   {#if isIOS && !isStandalone}
     <p class="install">
@@ -113,6 +137,19 @@
 
   .count :global(.icon) {
     color: var(--text-dim);
+  }
+
+  .mode {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .mode :global(.icon) {
+    color: var(--text);
+  }
+
+  .back {
+    margin-right: auto;
   }
 
   @media (max-height: 500px) {

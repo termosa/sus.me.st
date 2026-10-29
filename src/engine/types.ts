@@ -1,7 +1,11 @@
 import type { PlayerCount, Role, Team, Timings } from './rules';
 
+/** How roles are dealt: cards on the screen, or physical cards the host enters seat by seat. */
+export type Dealing = 'app' | 'cards';
+
 export interface Setup {
   playerCount: PlayerCount;
+  dealing: Dealing;
   /** `deck[i]` is the role on card number `i + 1`. */
   deck: Role[];
   timings: Timings;
@@ -23,7 +27,7 @@ export type Night0Stage = 'mafia' | 'sheriff' | 'free';
 export type NightStage = 'shoot' | 'don' | 'sheriff' | 'bestMove';
 
 export type Step =
-  /** Seat `taken.length + 1` picks a card. */
+  /** Seat `taken.length + 1` picks a card, or the host enters its role (physical cards). */
   | { kind: 'deal' }
   | { kind: 'night0'; stage: Night0Stage }
   /** Announce the night's kill or miss. */

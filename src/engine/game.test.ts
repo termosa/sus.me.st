@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { isAllowed, newGame, RuleError, reduce, replay } from './game';
 import { DEFAULT_TIMINGS, type PlayerCount, type Role } from './rules';
-import { cardsLeft, isSilent, stepKey, stepSeconds } from './selectors';
+import { cardFor, cardsLeft, isSilent, rolesLeft, stepKey, stepSeconds } from './selectors';
 import type { Game, GameEvent, Setup } from './types';
 
 // Card k goes to seat k, so: seat 1 Don, 2–3 Mafia, 4 Sheriff, the rest Citizens.
 function setup(playerCount: PlayerCount = 10): Setup {
   const deck: Role[] = ['don', 'mafia', 'mafia', 'sheriff'];
   while (deck.length < playerCount) deck.push('citizen');
-  return { playerCount, deck, timings: DEFAULT_TIMINGS };
+  return { playerCount, deck, timings: DEFAULT_TIMINGS, dealing: 'app' };
 }
 
 const next: GameEvent = { type: 'next' };
@@ -54,6 +54,35 @@ describe('dealing (S-6)', () => {
       { card: 8, label: 7 },
       { card: 9, label: 8 },
     ]);
+  });
+
+  it('counts the roles still to give out', () => {
+    expect(rolesLeft(newGame(setup()))).toEqual({ citizen: 6, sheriff: 1, mafia: 2, don: 1 });
+    const game = play([
+      { type: 'pick', card: 0 },
+      { type: 'pick', card: 1 },
+      { type: 'pick', card: 5 },
+    ]);
+    expect(rolesLeft(game)).toEqual({ citizen: 5, sheriff: 1, mafia: 1, don: 0 });
+  });
+
+  it('finds a card for a role told by the host (physical cards)', () => {
+    const game = play([{ type: 'pick', card: 1 }]);
+    expect(cardFor(game, 'mafia')).toBe(2);
+    expect(cardFor(game, 'citizen')).toBe(4);
+    const noDon = play([{ type: 'pick', card: 0 }]);
+    expect(cardFor(noDon, 'don')).toBeNull();
+  });
+
+  it('gives each seat the role the host picked', () => {
+    let game = newGame(setup());
+    const roles: Role[] = ['citizen', 'mafia', 'sheriff', 'citizen', 'don'];
+    for (const role of roles) {
+      const card = cardFor(game, role);
+      if (card === null) throw new Error(`No ${role} left`);
+      game = reduce(game, { type: 'pick', card });
+    }
+    expect(game.taken.map((card) => game.setup.deck[card])).toEqual(roles);
   });
 
   it('rejects a card that was already taken', () => {
