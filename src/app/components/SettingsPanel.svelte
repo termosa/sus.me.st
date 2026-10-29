@@ -12,6 +12,9 @@
   } from '../settings.svelte';
   import Icon, { type IconName } from './Icon.svelte';
 
+  /** Opens the night music panel. */
+  let { onmusic }: { onmusic: () => void } = $props();
+
   const ROWS: Record<(typeof CONFIGURABLE)[number], { icon: IconName; label: string }> = {
     night0FreeSitting: { icon: 'moon', label: 'Free' },
     donCheck: { icon: 'hat', label: 'Don' },
@@ -24,7 +27,6 @@
     { key: 'sounds', icon: 'volume', label: 'Sounds' },
     { key: 'voice', icon: 'mic', label: 'Voice' },
     { key: 'hints', icon: 'info', label: 'Hints' },
-    { key: 'nightMusic', icon: 'music', label: 'Night music' },
     { key: 'cuesInSilentMode', icon: 'bell', label: 'Cues in silent mode' },
   ];
 
@@ -49,6 +51,13 @@
 </script>
 
 <div class="settings">
+  <button type="button" class="row link" onclick={onmusic}>
+    <Icon name="music" />
+    <span class="label">Night music</span>
+    <span class="track">{settings.nightMusic ? (music.track?.name ?? '—') : 'Off'}</span>
+    <Icon name="next" size={20} />
+  </button>
+
   {#each TOGGLES as t (t.key)}
     <label class="row toggle">
       <Icon name={t.icon} />
@@ -116,6 +125,23 @@
     width: 28px;
     height: 28px;
     accent-color: var(--accent);
+  }
+
+  .link {
+    grid-template-columns: 24px auto 1fr auto;
+    min-height: var(--tap);
+    padding: 0;
+    background: none;
+    text-align: left;
+    color: var(--text-dim);
+  }
+
+  .track {
+    overflow: hidden;
+    color: var(--text);
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .reset {

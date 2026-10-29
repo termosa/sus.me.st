@@ -14,6 +14,16 @@
 
   let settingsOpen = $state(false);
   let musicOpen = $state(false);
+
+  function openMusic() {
+    settingsOpen = false;
+    musicOpen = true;
+  }
+
+  function openSettings() {
+    musicOpen = false;
+    settingsOpen = true;
+  }
   /** Picked player count; then the host chooses how roles are dealt. */
   let count: PlayerCount | null = $state(null);
 
@@ -33,9 +43,6 @@
       </button>
     {/if}
     <UpdateButton />
-    <button type="button" class="icon" aria-label="Music" onclick={() => (musicOpen = true)}>
-      <Icon name="music" />
-    </button>
     <button type="button" class="icon" aria-label="Settings" onclick={() => (settingsOpen = true)}>
       <Icon name="sliders" />
     </button>
@@ -79,13 +86,13 @@
 
 {#if musicOpen}
   <Sheet onclose={() => (musicOpen = false)}>
-    <MusicPanel />
+    <MusicPanel onback={openSettings} />
   </Sheet>
 {/if}
 
 {#if settingsOpen}
   <Sheet onclose={() => (settingsOpen = false)}>
-    <SettingsPanel />
+    <SettingsPanel onmusic={openMusic} />
   </Sheet>
 {/if}
 

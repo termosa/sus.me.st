@@ -32,6 +32,19 @@
   let sheetSeat = $state<number | null>(null);
   let menuOpen = $state(false);
   let musicOpen = $state(false);
+  /** The music sheet was opened from the menu, so it offers a way back. */
+  let fromMenu = $state(false);
+
+  function openMusic(viaMenu: boolean) {
+    menuOpen = false;
+    fromMenu = viaMenu;
+    musicOpen = true;
+  }
+
+  function openMenu() {
+    musicOpen = false;
+    menuOpen = true;
+  }
   let peek = $state(false);
   /** Seats chosen on the grid during the shooting or the best move. */
   let picks = $state<number[]>([]);
@@ -113,14 +126,11 @@
     >
       <Icon name="eye" />
     </button>
-    <button type="button" class="icon" aria-label="Music" onclick={() => (musicOpen = true)}>
-      <Icon name="music" />
-    </button>
     <button type="button" class="icon" aria-label="Menu" onclick={() => (menuOpen = true)}>
       <Icon name="menu" />
     </button>
     {#if night && settings.nightMusic && music.playlist.length > 0}
-      <div class="music-bar"><NightMusicBar /></div>
+      <div class="music-bar"><NightMusicBar onopen={() => openMusic(false)} /></div>
     {/if}
   </header>
 
@@ -263,13 +273,13 @@
 
 {#if musicOpen}
   <Sheet onclose={() => (musicOpen = false)}>
-    <MusicPanel />
+    <MusicPanel onback={fromMenu ? openMenu : undefined} />
   </Sheet>
 {/if}
 
 {#if menuOpen}
   <Sheet onclose={() => (menuOpen = false)}>
-    <SettingsPanel />
+    <SettingsPanel onmusic={() => openMusic(true)} />
     <hr />
     <div class="menu">
       {#each ['red', 'black'] as const as team (team)}
@@ -308,7 +318,7 @@
 
   header {
     display: grid;
-    grid-template-columns: var(--tap) 1fr var(--tap) var(--tap) var(--tap);
+    grid-template-columns: var(--tap) 1fr var(--tap) var(--tap);
     align-items: center;
     view-transition-name: header;
   }

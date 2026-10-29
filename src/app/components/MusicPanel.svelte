@@ -6,6 +6,9 @@
   import Hint from './Hint.svelte';
   import Icon from './Icon.svelte';
 
+  /** Set when opened from settings: a back button returns there. */
+  let { onback }: { onback?: () => void } = $props();
+
   let busy = $state(false);
   /** The track whose name is being edited. */
   let editing: string | null = $state(null);
@@ -111,6 +114,11 @@
 </script>
 
 <div class="music">
+  {#if onback}
+    <button type="button" class="back" aria-label="Back to settings" onclick={onback}>
+      <Icon name="back" />
+    </button>
+  {/if}
   <Hint
     text="Plays during the night to cover table noise. Pick the track before night falls; double-tap one to rename it."
   />
@@ -263,6 +271,14 @@
   .music {
     display: grid;
     gap: 8px;
+  }
+
+  .back {
+    display: grid;
+    place-items: center;
+    justify-self: start;
+    background: none;
+    color: var(--text-dim);
   }
 
   .music > :global(.hint) {

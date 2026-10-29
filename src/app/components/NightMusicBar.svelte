@@ -1,6 +1,9 @@
 <script lang="ts">
   import { music } from '../music.svelte';
   import Icon from './Icon.svelte';
+
+  /** Opens the night music panel. */
+  let { onopen }: { onopen: () => void } = $props();
 </script>
 
 <div class="bar">
@@ -28,10 +31,10 @@
   >
     <Icon name="skip" size={20} />
   </button>
-  <span class="name" class:dim={!music.playing}>
+  <button type="button" class="name" class:dim={!music.playing} onclick={onopen}>
     <Icon name="music" size={16} />
     <span>{music.track?.name ?? '—'}</span>
-  </span>
+  </button>
 </div>
 
 <style>
@@ -69,6 +72,8 @@
     gap: 6px;
     min-width: 0;
     margin-left: 6px;
+    padding: 0 4px;
+    border-radius: 999px;
     color: var(--text);
     font-size: 15px;
   }

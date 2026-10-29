@@ -62,13 +62,13 @@ After the player count, the host picks how roles are dealt: **On screen** (the c
 ## Night music
 
 - Five free (CC0) tracks come with the app and work offline: Noir jazz (first by default) and four synthwave tracks (Synthwave, Midnight drive, Blue street, Eighties). They are steady and dense, without quiet passages, so they cover table noise; all loop without a gap in loudness. Sources are in `public/music/CREDITS.md`.
-- The host adds their own audio files (stored on the device in IndexedDB, so they work offline) from the music button on the start screen or in the game header. Added files can be deleted; built-in tracks can be hidden instead. Hidden tracks are listed under "Hidden (n)", where they can be shown again, and next/previous at night skips them.
+- The host adds their own audio files (stored on the device in IndexedDB, so they work offline) in the music panel. It opens from the "Night music" row in settings (which shows the current track, with a back arrow to settings) or by tapping the track name in the night bar. Added files can be deleted; built-in tracks can be hidden instead. Hidden tracks are listed under "Hidden (n)", where they can be shown again, and next/previous at night skips them.
 - Tracks are reordered by dragging their grip (or with the arrow keys on it). The order is the order of next/previous at night; when no track was picked, the first one plays.
 - Any track can be renamed by double-tapping it (the first tap picks it): Enter, the check button or tapping away saves, Escape cancels, and an empty name brings back the track's own.
 - One track is chosen at a time. It loops through each night, fading in as night falls and out at morning; the choice can change before or during any night.
 - The voice lowers the music while it speaks.
-- During nights a bar under the header has previous track, play/pause and next track. A pause holds until resumed or the next night.
-- A "Night music" setting turns it off altogether.
+- During nights a bar under the header has previous track, play/pause, next track and the track name. A pause holds until resumed or the next night.
+- A "Night music" switch in the music panel turns it off altogether; the settings row then reads "Off".
 
 ## Voting
 
